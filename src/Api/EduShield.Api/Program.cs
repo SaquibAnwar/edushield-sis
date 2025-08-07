@@ -1,4 +1,18 @@
+using EduShield.Core.Data;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
+
+// Add database context
+var cs = builder.Configuration.GetConnectionString("Postgres") ??
+         "Host=localhost;Port=5432;Database=edushield;Username=postgres;Password=secret";
+builder.Services.AddDbContext<EduShieldDbContext>(o =>
+    o.UseNpgsql(cs));
+
+// Add health checks
+builder.Services.AddHealthChecks()
+    .AddNpgSql(cs, name: "postgres")
+    .AddDbContextCheck<EduShieldDbContext>("efcore");
 
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -20,6 +34,9 @@ var summaries = new[]
 {
     "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
 };
+
+// Map health check endpoint
+app.MapHealthChecks("/healthz");
 
 app.MapGet("/weatherforecast", () =>
 {

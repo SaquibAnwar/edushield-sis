@@ -1,0 +1,42 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{1C0F3E48-7028-43CD-8887-3EBFD43F0550}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Api", "Api", "{D1DFF693-9C0F-4F58-8656-278893984B16}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EduShield.Api", "src\Api\EduShield.Api\EduShield.Api.csproj", "{D1D785D1-F918-4C60-8AF9-464492492D25}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{86408979-2BE6-4E82-9340-9C6AABBB5118}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Api", "Api", "{6FFCCC2C-F7ED-4AA3-9FA2-E00C1DA78B21}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EduShield.Api.Tests", "tests\Api\EduShield.Api.Tests\EduShield.Api.Tests.csproj", "{AF07AD9D-6C32-4354-B320-E8E9C73F6C62}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D1D785D1-F918-4C60-8AF9-464492492D25}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D1D785D1-F918-4C60-8AF9-464492492D25}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D1D785D1-F918-4C60-8AF9-464492492D25}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D1D785D1-F918-4C60-8AF9-464492492D25}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AF07AD9D-6C32-4354-B320-E8E9C73F6C62}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AF07AD9D-6C32-4354-B320-E8E9C73F6C62}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AF07AD9D-6C32-4354-B320-E8E9C73F6C62}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AF07AD9D-6C32-4354-B320-E8E9C73F6C62}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{D1DFF693-9C0F-4F58-8656-278893984B16} = {1C0F3E48-7028-43CD-8887-3EBFD43F0550}
+		{D1D785D1-F918-4C60-8AF9-464492492D25} = {D1DFF693-9C0F-4F58-8656-278893984B16}
+		{6FFCCC2C-F7ED-4AA3-9FA2-E00C1DA78B21} = {86408979-2BE6-4E82-9340-9C6AABBB5118}
+		{AF07AD9D-6C32-4354-B320-E8E9C73F6C62} = {6FFCCC2C-F7ED-4AA3-9FA2-E00C1DA78B21}
+	EndGlobalSection
+EndGlobal

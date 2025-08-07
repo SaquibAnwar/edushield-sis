@@ -1,0 +1,59 @@
+name: CI
+
+on:
+    push:
+        branches: [ main, develop ]
+    pull_request:
+        branches: [ main, develop ]
+
+jobs:
+    test:
+        name: Test
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Setup .NET 8
+              uses: actions/setup-dotnet@v3
+              with:
+                  dotnet-version: '8.0.x'
+
+            - name: Cache Docker layers
+              uses: actions/cache@v3
+              with:
+                  path: /tmp/.buildx-cache
+                  key: ${{ runner.os }}-buildx-${{ github.sha }}
+                  restore-keys: |
+                      ${{ runner.os }}-buildx-
+
+            - name: Start test infrastructure
+              run: docker compose -f docker-compose.test.yml up -d
+
+            - name: Wait for services to be ready
+              run: |
+                  echo "Waiting for PostgreSQL..."
+                  timeout 60s bash -c 'until docker compose -f docker-compose.test.yml exec -T postgres pg_isready -U postgres; do sleep 2; done'
+                  echo "Waiting for Redis..."
+                  timeout 30s bash -c 'until docker compose -f docker-compose.test.yml exec -T redis redis-cli ping | grep -q PONG; do sleep 2; done'
+                  echo "All services are ready!"
+
+            - name: Restore dependencies
+              run: dotnet restore
+
+            - name: Build solution
+              run: dotnet build --configuration Release --no-restore
+
+            - name: Run tests
+              run: dotnet test --configuration Release --no-build --verbosity normal --collect:"XPlat Code Coverage"
+
+            - name: Upload coverage reports
+              uses: codecov/codecov-action@v3
+              with:
+                  file: '**/coverage.cobertura.xml'
+                  fail_ci_if_error: false
+
+            - name: Stop test infrastructure
+              if: always()
+              run: docker compose -f docker-compose.test.yml down -v

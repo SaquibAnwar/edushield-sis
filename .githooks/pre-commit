@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+set -e
+
+echo "Running pre-commit checks..."
+
+echo "🔍 Checking code formatting..."
+dotnet format --verify-no-changes
+
+echo "🧪 Running tests..."
+dotnet test --nologo
+
+echo "✅ All pre-commit checks passed!"

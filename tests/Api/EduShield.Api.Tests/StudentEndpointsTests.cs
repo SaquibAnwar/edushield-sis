@@ -13,54 +13,20 @@ using Microsoft.Extensions.Logging;
 namespace EduShield.Api.Tests;
 
 [TestFixture]
-public class StudentEndpointsTests : IDisposable
+public class StudentEndpointsTests
 {
-    private WebApplicationFactory<Program> _factory = default!;
+    private CustomWebAppFactory _factory = default!;
     private HttpClient _client = default!;
 
-    [SetUp]
-    public void SetUp()
+    [OneTimeSetUp]
+    public void OneTimeSetUp()
     {
-        _factory = new WebApplicationFactory<Program>()
-            .WithWebHostBuilder(builder =>
-            {
-                builder.UseEnvironment("Testing");
-                builder.ConfigureServices(services =>
-                {
-                    // Remove the existing DbContext registrations
-                    var descriptors = services.Where(d => 
-                        d.ServiceType == typeof(DbContextOptions<EduShieldDbContext>) ||
-                        d.ServiceType == typeof(DbContextOptions))
-                        .ToList();
-                    
-                    foreach (var descriptor in descriptors)
-                    {
-                        services.Remove(descriptor);
-                    }
-
-                    // Remove the existing DbContext service
-                    var dbContextDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(EduShieldDbContext));
-                    if (dbContextDescriptor != null)
-                    {
-                        services.Remove(dbContextDescriptor);
-                    }
-
-                    // Add InMemory database for testing
-                    services.AddDbContext<EduShieldDbContext>(options =>
-                    {
-                        options.UseInMemoryDatabase($"TestDb_{Guid.NewGuid()}");
-                    });
-
-                    // Reduce logging noise during tests
-                    services.AddLogging(builder => builder.SetMinimumLevel(LogLevel.Warning));
-                });
-            });
-
+        _factory = new CustomWebAppFactory();
         _client = _factory.CreateClient();
     }
 
-    [TearDown]
-    public void TearDown()
+    [OneTimeTearDown]
+    public void OneTimeTearDown()
     {
         _client?.Dispose();
         _factory?.Dispose();
@@ -246,8 +212,8 @@ public class StudentEndpointsTests : IDisposable
         // Act
         var response = await _client.GetAsync("/v1/students/invalid-guid");
 
-        // Assert
-        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        // Assert - Minimal API routing returns NotFound for invalid GUID format
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
     }
 
     [Test]
@@ -264,9 +230,4 @@ public class StudentEndpointsTests : IDisposable
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
     }
 
-    public void Dispose()
-    {
-        _client?.Dispose();
-        _factory?.Dispose();
-    }
 }

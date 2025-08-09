@@ -47,6 +47,13 @@ public class StudentEndpointsTests
         var response = await _client.PostAsJsonAsync("/v1/students", request);
 
         // Assert
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorContent = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"Error Response: {response.StatusCode}");
+            Console.WriteLine($"Error Content: {errorContent}");
+        }
+        
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Created));
         Assert.That(response.Headers.Location, Is.Not.Null);
 

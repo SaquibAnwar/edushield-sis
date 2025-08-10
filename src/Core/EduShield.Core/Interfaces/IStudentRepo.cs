@@ -4,10 +4,9 @@ namespace EduShield.Core.Interfaces;
 
 public interface IStudentRepo
 {
-    Task<Student> CreateAsync(Student student, CancellationToken cancellationToken = default);
-    Task<Student?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
-    Task<IEnumerable<Student>> GetAllAsync(CancellationToken cancellationToken = default);
-    Task<Student> UpdateAsync(Student student, CancellationToken cancellationToken = default);
-    Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default);
-    Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<Student> CreateAsync(Student student, CancellationToken cancellationToken);
+    Task<Student?> GetByIdAsync(Guid id, CancellationToken cancellationToken);
+    Task<IEnumerable<Student>> GetAllAsync(CancellationToken cancellationToken);
+    Task<Student> UpdateAsync(Student student, CancellationToken cancellationToken);
+    Task DeleteAsync(Guid id, CancellationToken cancellationToken);
 }

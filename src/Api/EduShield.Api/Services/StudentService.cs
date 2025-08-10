@@ -2,81 +2,77 @@ using AutoMapper;
 using EduShield.Core.Dtos;
 using EduShield.Core.Entities;
 using EduShield.Core.Interfaces;
-using FluentValidation;
+using EduShield.Core.Mapping;
+using Microsoft.EntityFrameworkCore;
 
 namespace EduShield.Api.Services;
 
 public class StudentService : IStudentService
 {
     private readonly IStudentRepo _studentRepo;
-    private readonly IValidator<CreateStudentReq> _validator;
     private readonly IMapper _mapper;
-    private readonly ILogger<StudentService> _logger;
 
-    public StudentService(
-        IStudentRepo studentRepo,
-        IValidator<CreateStudentReq> validator,
-        IMapper mapper,
-        ILogger<StudentService> logger)
+    public StudentService(IStudentRepo studentRepo, IMapper mapper)
     {
         _studentRepo = studentRepo;
-        _validator = validator;
         _mapper = mapper;
-        _logger = logger;
     }
 
-    public async Task<Guid> CreateAsync(CreateStudentReq req, CancellationToken cancellationToken = default)
+    public async Task<Guid> CreateAsync(CreateStudentReq request, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Creating new student with name: {Name}", req.Name);
+        var student = _mapper.Map<Student>(request);
+        student.Id = Guid.NewGuid();
+        student.CreatedAt = DateTime.UtcNow;
+        student.UpdatedAt = DateTime.UtcNow;
 
-        // Validate the request
-        var validationResult = await _validator.ValidateAsync(req, cancellationToken);
-        if (!validationResult.IsValid)
-        {
-            var errors = string.Join(", ", validationResult.Errors.Select(e => e.ErrorMessage));
-            _logger.LogWarning("Validation failed for student creation: {Errors}", errors);
-            throw new ArgumentException($"Validation failed: {errors}");
-        }
-
-        try
-        {
-            // Map request to entity
-            var student = _mapper.Map<Student>(req);
-
-            // Persist to database
-            var createdStudent = await _studentRepo.CreateAsync(student, cancellationToken);
-
-            _logger.LogInformation("Successfully created student with ID: {StudentId}", createdStudent.StudentId);
-            return createdStudent.StudentId;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to create student with name: {Name}", req.Name);
-            throw new ApplicationException("Failed to create student", ex);
-        }
+        await _studentRepo.CreateAsync(student, cancellationToken);
+        return student.Id;
     }
 
-    public async Task<StudentDto?> GetAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<StudentDto?> GetAsync(Guid id, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Retrieving student with ID: {StudentId}", id);
+        var student = await _studentRepo.GetByIdAsync(id, cancellationToken);
+        return student != null ? _mapper.Map<StudentDto>(student) : null;
+    }
 
-        try
-        {
-            var student = await _studentRepo.GetByIdAsync(id, cancellationToken);
-            if (student == null)
-            {
-                _logger.LogWarning("Student not found with ID: {StudentId}", id);
-                return null;
-            }
+    public async Task<IEnumerable<StudentDto>> GetAllAsync(CancellationToken cancellationToken)
+    {
+        var students = await _studentRepo.GetAllAsync(cancellationToken);
+        return _mapper.Map<IEnumerable<StudentDto>>(students);
+    }
 
-            var dto = _mapper.Map<StudentDto>(student);
-            _logger.LogInformation("Successfully retrieved student with ID: {StudentId}", id);
-            return dto;
-        }
-        catch (Exception ex)
+    public async Task<bool> UpdateAsync(Guid id, CreateStudentReq request, CancellationToken cancellationToken)
+    {
+        var existingStudent = await _studentRepo.GetByIdAsync(id, cancellationToken);
+        if (existingStudent == null)
         {
-            _logger.LogError(ex, "Failed to retrieve student with ID: {StudentId}", id);
-            throw new ApplicationException("Failed to retrieve student", ex);
+            return false;
         }
+
+        // Update properties
+        existingStudent.FirstName = request.FirstName;
+        existingStudent.LastName = request.LastName;
+        existingStudent.Email = request.Email;
+        existingStudent.PhoneNumber = request.PhoneNumber;
+        existingStudent.DateOfBirth = DateTime.SpecifyKind(request.DateOfBirth, DateTimeKind.Utc);
+        existingStudent.Gender = request.Gender;
+        existingStudent.Address = request.Address;
+        existingStudent.EnrollmentDate = DateTime.SpecifyKind(request.EnrollmentDate, DateTimeKind.Utc);
+        existingStudent.UpdatedAt = DateTime.UtcNow;
+
+        await _studentRepo.UpdateAsync(existingStudent, cancellationToken);
+        return true;
+    }
+
+    public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken)
+    {
+        var existingStudent = await _studentRepo.GetByIdAsync(id, cancellationToken);
+        if (existingStudent == null)
+        {
+            return false;
+        }
+
+        await _studentRepo.DeleteAsync(id, cancellationToken);
+        return true;
     }
 }

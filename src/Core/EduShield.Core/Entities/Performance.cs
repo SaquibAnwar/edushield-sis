@@ -3,6 +3,10 @@ namespace EduShield.Core.Entities;
 public class Performance(Guid performanceId, Guid studentId, Guid facultyId, string subject, 
                         decimal marks, decimal maxMarks, DateTime examDate)
 {
+    public Performance() : this(Guid.Empty, Guid.Empty, Guid.Empty, string.Empty, 0, 0, DateTime.UtcNow)
+    {
+    }
+    
     public Guid PerformanceId { get; init; } = performanceId;
     public Guid StudentId { get; set; } = studentId;
     public Guid FacultyId { get; set; } = facultyId;

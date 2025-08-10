@@ -23,11 +23,21 @@ public class EduShieldDbContext : DbContext
         modelBuilder.Entity<Student>(entity =>
         {
             entity.ToTable("Students");
-            entity.HasKey(e => e.StudentId);
-            entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
-            entity.Property(e => e.Class).IsRequired().HasMaxLength(20);
-            entity.Property(e => e.Section).IsRequired().HasMaxLength(10);
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.FirstName).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.LastName).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Email).IsRequired().HasMaxLength(255);
+            entity.Property(e => e.PhoneNumber).IsRequired().HasMaxLength(20);
+            entity.Property(e => e.DateOfBirth).IsRequired();
+            entity.Property(e => e.Address).IsRequired().HasMaxLength(500);
+            entity.Property(e => e.EnrollmentDate).IsRequired();
             entity.Property(e => e.Gender).IsRequired();
+            entity.Property(e => e.CreatedAt).IsRequired();
+            entity.Property(e => e.UpdatedAt).IsRequired();
+
+            // Configure indexes
+            entity.HasIndex(e => e.Email).IsUnique();
+            entity.HasIndex(e => e.PhoneNumber);
 
             // Configure relationships
             entity.HasMany(e => e.Performances)
@@ -39,6 +49,13 @@ public class EduShieldDbContext : DbContext
                   .WithOne(f => f.Student)
                   .HasForeignKey(f => f.StudentId)
                   .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure Faculty relationship
+            entity.HasOne(e => e.Faculty)
+                  .WithMany()
+                  .HasForeignKey(e => e.FacultyId)
+                  .IsRequired(false)
+                  .OnDelete(DeleteBehavior.SetNull);
         });
 
         // Configure Faculty entity
@@ -56,6 +73,13 @@ public class EduShieldDbContext : DbContext
                   .WithOne(p => p.Faculty)
                   .HasForeignKey(p => p.FacultyId)
                   .OnDelete(DeleteBehavior.Restrict);
+
+            // Configure Students relationship
+            entity.HasMany(e => e.Students)
+                  .WithOne(s => s.Faculty)
+                  .HasForeignKey(s => s.FacultyId)
+                  .IsRequired(false)
+                  .OnDelete(DeleteBehavior.SetNull);
         });
 
         // Configure Performance entity

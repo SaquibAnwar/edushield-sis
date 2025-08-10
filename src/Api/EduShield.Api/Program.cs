@@ -1,39 +1,45 @@
+using EduShield.Api.Auth;
 using EduShield.Api.Data;
 using EduShield.Api.Services;
 using EduShield.Core.Data;
-using EduShield.Core.Dtos;
 using EduShield.Core.Interfaces;
 using EduShield.Core.Mapping;
 using EduShield.Core.Validators;
 using FluentValidation;
 using FluentValidation.AspNetCore;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
-using Serilog;
-
-// Configure Serilog
-Log.Logger = new LoggerConfiguration()
-    .Enrich.FromLogContext()
-    .WriteTo.Console()
-    .CreateBootstrapLogger();
+using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.Mvc;
+using EduShield.Api.Swagger;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configure Serilog
-builder.Host.UseSerilog((ctx, lc) => lc
-    .ReadFrom.Configuration(ctx.Configuration)
-    .Enrich.FromLogContext()
-    .WriteTo.Console());
+// Add services to the container.
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "EduShield SIS API",
+        Version = "v1",
+        Description = "Student Information System API"
+    });
 
-// Add database context
-var cs = builder.Configuration.GetConnectionString("Postgres") ??
-         "Host=localhost;Port=5432;Database=edushield;Username=postgres;Password=secret";
-builder.Services.AddDbContext<EduShieldDbContext>(o =>
-    o.UseNpgsql(cs));
+    // Document DevAuth header usage
+    c.AddSecurityDefinition("DevAuth", new OpenApiSecurityScheme
+    {
+        Description = "Use 'DevAuth dev-token' in the Authorization header during development",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "DevAuth"
+    });
 
-// Add health checks
-builder.Services.AddHealthChecks()
-    .AddNpgSql(cs, name: "postgres")
-    .AddDbContextCheck<EduShieldDbContext>("efcore");
+    // Apply security to operations with [Authorize]
+    c.OperationFilter<AuthorizeCheckOperationFilter>();
+});
 
 // Add AutoMapper
 builder.Services.AddAutoMapper(typeof(StudentMappingProfile));
@@ -43,14 +49,69 @@ builder.Services.AddFluentValidationAutoValidation()
                 .AddFluentValidationClientsideAdapters();
 builder.Services.AddValidatorsFromAssemblyContaining<CreateStudentReqValidator>();
 
-// Add repositories and services
+// Add DbContext (conditional per environment or config flag)
+var useInMemory = builder.Configuration.GetValue<bool>("UseInMemoryDb");
+if (builder.Environment.IsEnvironment("Testing") || useInMemory)
+{
+    builder.Services.AddDbContext<EduShieldDbContext>(options =>
+        options.UseInMemoryDatabase("TestDb").EnableSensitiveDataLogging());
+}
+else
+{
+    builder.Services.AddDbContext<EduShieldDbContext>(options =>
+        options.UseNpgsql(builder.Configuration.GetConnectionString("Postgres")));
+}
+
+// Add Repositories
 builder.Services.AddScoped<IStudentRepo, StudentRepo>();
+
+// Add Services
 builder.Services.AddScoped<IStudentService, StudentService>();
 
-// Add services to the container.
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+// Add Authentication
+builder.Services.AddAuthentication("DevAuth")
+    .AddScheme<AuthenticationSchemeOptions, DevAuthHandler>("DevAuth", options => { });
+
+// Add Authorization
+builder.Services.AddAuthorization();
+
+// Consistent 400 shape for model validation errors
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.InvalidModelStateResponseFactory = context =>
+    {
+        var errors = context.ModelState
+            .Where(kvp => kvp.Value?.Errors.Count > 0)
+            .Select(kvp => new { field = kvp.Key, messages = kvp.Value!.Errors.Select(e => e.ErrorMessage).ToArray() })
+            .ToArray();
+
+        var payload = new
+        {
+            error = "Validation failed",
+            details = errors
+        };
+
+        return new BadRequestObjectResult(payload);
+    };
+});
+
+// Add Health Checks
+var healthChecks = builder.Services.AddHealthChecks();
+if (!builder.Environment.IsEnvironment("Testing"))
+{
+    healthChecks.AddDbContextCheck<EduShieldDbContext>();
+}
+
+// Add CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
 
 var app = builder.Build();
 
@@ -61,69 +122,71 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
-
-var summaries = new[]
+if (!app.Environment.IsEnvironment("Testing"))
 {
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+    app.UseHttpsRedirection();
+}
 
-// Map health check endpoint
-app.MapHealthChecks("/healthz");
+app.UseCors("AllowAll");
 
-// Map student endpoints
-app.MapPost("/v1/students", async (CreateStudentReq req, IStudentService svc, ILogger<Program> log, CancellationToken ct) =>
+// Add global exception handling middleware
+app.Use(async (context, next) =>
 {
     try
     {
-        var id = await svc.CreateAsync(req, ct);
-        return Results.Created($"/v1/students/{id}", new { id });
-    }
-    catch (ArgumentException ex)
-    {
-        log.LogWarning("Validation error creating student: {Error}", ex.Message);
-        return Results.BadRequest(new { error = ex.Message });
+        await next();
     }
     catch (Exception ex)
     {
-        log.LogError(ex, "Error creating student");
-        return Results.StatusCode(500);
+        // Log the exception
+        var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An unhandled exception occurred: {Message}", ex.Message);
+        
+        // Return detailed error in development and testing
+        if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Testing"))
+        {
+            context.Response.StatusCode = 500;
+            context.Response.ContentType = "application/json";
+            var errorResponse = new
+            {
+                error = ex.Message,
+                details = ex.ToString(),
+                stackTrace = ex.StackTrace
+            };
+            await context.Response.WriteAsJsonAsync(errorResponse);
+        }
+        else
+        {
+            context.Response.StatusCode = 500;
+            context.Response.ContentType = "application/json";
+            var errorResponse = new { error = "An error occurred while processing your request." };
+            await context.Response.WriteAsJsonAsync(errorResponse);
+        }
     }
-})
-.WithName("CreateStudent")
-.WithOpenApi()
-.WithSummary("Create a new student")
-.WithDescription("Creates a new student with the provided information");
+});
 
-app.MapGet("/v1/students/{id:guid}", async (Guid id, IStudentService svc, CancellationToken ct) =>
-    await svc.GetAsync(id, ct)
-        is { } dto ? Results.Ok(dto) : Results.NotFound())
-.WithName("GetStudent")
-.WithOpenApi()
-.WithSummary("Get student by ID")
-.WithDescription("Retrieves a student by their unique identifier");
+app.UseAuthentication();
+app.UseAuthorization();
 
-app.MapGet("/weatherforecast", () =>
+app.MapControllers();
+
+if (app.Environment.IsEnvironment("Testing"))
 {
-    var forecast = Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast")
-.WithOpenApi();
+    app.MapGet("/health", () => Results.Ok("Healthy"));
+}
+else
+{
+    app.MapHealthChecks("/health");
+}
+
+// Ensure database is created and migrations are applied (skip during Testing)
+if (!app.Environment.IsEnvironment("Testing"))
+{
+    using var scope = app.Services.CreateScope();
+    var context = scope.ServiceProvider.GetRequiredService<EduShieldDbContext>();
+    context.Database.Migrate();
+}
 
 app.Run();
 
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
-
-// Make Program accessible for testing
-public partial class Program;
+public partial class Program { }

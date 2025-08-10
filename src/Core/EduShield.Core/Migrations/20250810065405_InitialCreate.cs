@@ -30,15 +30,27 @@ namespace EduShield.Core.Migrations
                 name: "Students",
                 columns: table => new
                 {
-                    StudentId = table.Column<Guid>(type: "uuid", nullable: false),
-                    Name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    Class = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
-                    Section = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
-                    Gender = table.Column<int>(type: "integer", nullable: false)
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    FirstName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    LastName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    Email = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    PhoneNumber = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
+                    DateOfBirth = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    Address = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
+                    EnrollmentDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    Gender = table.Column<int>(type: "integer", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    FacultyId = table.Column<Guid>(type: "uuid", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Students", x => x.StudentId);
+                    table.PrimaryKey("PK_Students", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Students_Faculty_FacultyId",
+                        column: x => x.FacultyId,
+                        principalTable: "Faculty",
+                        principalColumn: "FacultyId");
                 });
 
             migrationBuilder.CreateTable(
@@ -60,7 +72,7 @@ namespace EduShield.Core.Migrations
                         name: "FK_Fees_Students_StudentId",
                         column: x => x.StudentId,
                         principalTable: "Students",
-                        principalColumn: "StudentId",
+                        principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -89,7 +101,7 @@ namespace EduShield.Core.Migrations
                         name: "FK_Performances_Students_StudentId",
                         column: x => x.StudentId,
                         principalTable: "Students",
-                        principalColumn: "StudentId",
+                        principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -112,6 +124,22 @@ namespace EduShield.Core.Migrations
                 name: "IX_Performances_FacultyId",
                 table: "Performances",
                 column: "FacultyId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Students_Email",
+                table: "Students",
+                column: "Email",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Students_FacultyId",
+                table: "Students",
+                column: "FacultyId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Students_PhoneNumber",
+                table: "Students",
+                column: "PhoneNumber");
         }
 
         /// <inheritdoc />
@@ -124,10 +152,10 @@ namespace EduShield.Core.Migrations
                 name: "Performances");
 
             migrationBuilder.DropTable(
-                name: "Faculty");
+                name: "Students");
 
             migrationBuilder.DropTable(
-                name: "Students");
+                name: "Faculty");
         }
     }
 }

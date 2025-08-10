@@ -3,6 +3,7 @@ using System;
 using EduShield.Core.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace EduShield.Core.Migrations
 {
     [DbContext(typeof(EduShieldDbContext))]
-    partial class EduShieldDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250810065405_InitialCreate")]
+    partial class InitialCreate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -221,9 +224,8 @@ namespace EduShield.Core.Migrations
             modelBuilder.Entity("EduShield.Core.Entities.Student", b =>
                 {
                     b.HasOne("EduShield.Core.Entities.Faculty", "Faculty")
-                        .WithMany("Students")
-                        .HasForeignKey("FacultyId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .WithMany()
+                        .HasForeignKey("FacultyId");
 
                     b.Navigation("Faculty");
                 });
@@ -231,8 +233,6 @@ namespace EduShield.Core.Migrations
             modelBuilder.Entity("EduShield.Core.Entities.Faculty", b =>
                 {
                     b.Navigation("Performances");
-
-                    b.Navigation("Students");
                 });
 
             modelBuilder.Entity("EduShield.Core.Entities.Student", b =>

@@ -1,0 +1,10 @@
+{
+  "firstName": "John",
+  "lastName": "Doe",
+  "email": "john.doe@example.com",
+  "phoneNumber": "123-456-7890",
+  "dateOfBirth": "2000-01-01",
+  "address": "123 Main St",
+  "enrollmentDate": "2024-01-15",
+  "gender": 1
+}

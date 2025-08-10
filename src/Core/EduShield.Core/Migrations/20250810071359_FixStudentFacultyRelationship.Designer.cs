@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace EduShield.Core.Migrations
 {
     [DbContext(typeof(EduShieldDbContext))]
-    [Migration("20250807115742_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20250810071359_FixStudentFacultyRelationship")]
+    partial class FixStudentFacultyRelationship
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -132,29 +132,61 @@ namespace EduShield.Core.Migrations
 
             modelBuilder.Entity("EduShield.Core.Entities.Student", b =>
                 {
-                    b.Property<Guid>("StudentId")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("Class")
+                    b.Property<string>("Address")
                         .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
 
-                    b.Property<int>("Gender")
-                        .HasColumnType("integer");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("Name")
+                    b.Property<DateTime>("DateOfBirth")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTime>("EnrollmentDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("FacultyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("FirstName")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<string>("Section")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("character varying(10)");
+                    b.Property<int>("Gender")
+                        .HasColumnType("integer");
 
-                    b.HasKey("StudentId");
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Email")
+                        .IsUnique();
+
+                    b.HasIndex("FacultyId");
+
+                    b.HasIndex("PhoneNumber");
 
                     b.ToTable("Students", (string)null);
                 });
@@ -189,9 +221,21 @@ namespace EduShield.Core.Migrations
                     b.Navigation("Student");
                 });
 
+            modelBuilder.Entity("EduShield.Core.Entities.Student", b =>
+                {
+                    b.HasOne("EduShield.Core.Entities.Faculty", "Faculty")
+                        .WithMany("Students")
+                        .HasForeignKey("FacultyId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Faculty");
+                });
+
             modelBuilder.Entity("EduShield.Core.Entities.Faculty", b =>
                 {
                     b.Navigation("Performances");
+
+                    b.Navigation("Students");
                 });
 
             modelBuilder.Entity("EduShield.Core.Entities.Student", b =>

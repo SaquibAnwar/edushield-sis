@@ -14,46 +14,45 @@ public class StudentRepo : IStudentRepo
         _context = context;
     }
 
-    public async Task<Student> CreateAsync(Student student, CancellationToken cancellationToken = default)
+    public async Task<Student> CreateAsync(Student student, CancellationToken cancellationToken)
     {
         _context.Students.Add(student);
         await _context.SaveChangesAsync(cancellationToken);
         return student;
     }
 
-    public async Task<Student?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<Student?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
         return await _context.Students
-            .FirstOrDefaultAsync(s => s.StudentId == id, cancellationToken);
+            .Include(s => s.Faculty)
+            .Include(s => s.Performances)
+            .Include(s => s.Fees)
+            .FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
     }
 
-    public async Task<IEnumerable<Student>> GetAllAsync(CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<Student>> GetAllAsync(CancellationToken cancellationToken)
     {
         return await _context.Students
+            .Include(s => s.Faculty)
+            .Include(s => s.Performances)
+            .Include(s => s.Fees)
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<Student> UpdateAsync(Student student, CancellationToken cancellationToken = default)
+    public async Task<Student> UpdateAsync(Student student, CancellationToken cancellationToken)
     {
-        _context.Entry(student).State = EntityState.Modified;
+        _context.Students.Update(student);
         await _context.SaveChangesAsync(cancellationToken);
         return student;
     }
 
-    public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task DeleteAsync(Guid id, CancellationToken cancellationToken)
     {
-        var student = await GetByIdAsync(id, cancellationToken);
-        if (student == null)
-            return false;
-
-        _context.Students.Remove(student);
-        await _context.SaveChangesAsync(cancellationToken);
-        return true;
-    }
-
-    public async Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default)
-    {
-        return await _context.Students
-            .AnyAsync(s => s.StudentId == id, cancellationToken);
+        var student = await _context.Students.FindAsync(new object[] { id }, cancellationToken);
+        if (student != null)
+        {
+            _context.Students.Remove(student);
+            await _context.SaveChangesAsync(cancellationToken);
+        }
     }
 }

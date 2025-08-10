@@ -1,193 +1,174 @@
 # EduShield SIS (Student Information System)
 
-A modern Student Information System built with .NET 8 and ASP.NET Core Minimal APIs.
+A modern .NET 8 Student Information System built with Entity Framework Core, PostgreSQL, and JWT authentication.
 
-## Architecture
+## Features
 
-- **API Layer**: ASP.NET Core Minimal API (`src/Api/EduShield.Api`)
-- **Tests**: xUnit test project (`tests/Api/EduShield.Api.Tests`)
-- **Infrastructure**: Docker Compose setup for development dependencies
+- Student management (CRUD operations)
+- Faculty management
+- Performance tracking
+- Fee management
+- JWT-based authentication
+- Role-based authorization
+- AutoMapper for object mapping
+- FluentValidation for request validation
+- Health checks
+- Swagger/OpenAPI documentation
 
 ## Prerequisites
 
-- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
-- [Docker](https://www.docker.com/get-started)
-- [Docker Compose](https://docs.docker.com/compose/install/)
+- .NET 8.0 SDK
+- Docker and Docker Compose
+- PostgreSQL (or use Docker)
 
-## Getting Started
+## Quick Start
 
-### 1. Clone the Repository
+### 1. Start the Database
 
 ```bash
-git clone <repository-url>
-cd edushield-sis
+# Start PostgreSQL using Docker Compose
+docker-compose up -d postgres
+
+# Wait for the database to be ready (check health status)
+docker-compose ps
 ```
 
-### 2. Start the Development Stack
-
-The project includes a Docker Compose configuration that provides all necessary development dependencies:
-
-- **PostgreSQL 15**: Primary database (port 5432)
-- **Redis 7**: Caching and session storage (port 6379)
-- **MailHog**: Email testing tool (SMTP: 1025, Web UI: 8025)
+### 2. Run Database Migrations
 
 ```bash
-# Start all services
-docker compose -f docker-compose.test.yml up -d
+# Navigate to the API project
+cd src/Api/EduShield.Api
 
-# Check service status
-docker compose -f docker-compose.test.yml ps
-
-# View logs
-docker compose -f docker-compose.test.yml logs
+# Create the database and run migrations
+dotnet ef database update
 ```
 
-### 3. Build and Run the Application
+### 3. Run the Application
 
 ```bash
-# Restore dependencies
-dotnet restore
+# From the API project directory
+dotnet run
 
-# Build the solution
-dotnet build
-
-# Run the API
-dotnet run --project src/Api/EduShield.Api/EduShield.Api.csproj
+# Or from the solution root
+dotnet run --project src/Api/EduShield.Api
 ```
 
 The API will be available at:
-- HTTP: `http://localhost:5000`
-- HTTPS: `https://localhost:5001`
-- Swagger UI: `https://localhost:5001/swagger`
+- **API**: https://localhost:7001 (or http://localhost:5001)
+- **Swagger UI**: https://localhost:7001/swagger
+- **Health Check**: https://localhost:7001/healthz
 
-### 4. Run Tests
+### 4. Test the API
 
+The application uses development authentication in development mode, so you can test the endpoints without providing JWT tokens.
+
+#### Create a Student
 ```bash
-# Run all tests
-dotnet test --verbosity normal
-
-# Run tests with coverage
-dotnet test --collect:"XPlat Code Coverage"
-
-# Run tests in watch mode
-dotnet test --watch
+curl -X POST "https://localhost:7001/v1/students" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "John Doe",
+    "class": "10",
+    "section": "A",
+    "gender": 0
+  }'
 ```
 
-## Developer Setup
-
-### Enable Git Hooks
-
-To ensure code quality and consistency, set up the automated pre-commit hooks:
-
+#### Get All Students
 ```bash
-# Configure Git to use the project's hooks directory
-git config core.hooksPath .githooks
+curl "https://localhost:7001/v1/students"
 ```
-
-This enables automatic checks before each commit:
-- **Code Formatting**: Runs `dotnet format --verify-no-changes`
-- **Tests**: Runs `dotnet test --nologo`
-
-The commit will be blocked if either check fails, ensuring consistent code quality across the team.
-
-### Editor Configuration
-
-The project includes an `.editorconfig` file that enforces:
-- UTF-8 encoding
-- 4-space indentation
-- 120-character line limit
-- Consistent .NET coding standards
-
-Most modern editors (Visual Studio, VS Code, JetBrains Rider) automatically respect these settings.
-
-## Development Services
-
-### PostgreSQL Database
-- **Host**: localhost
-- **Port**: 5432
-- **Database**: edushield_test
-- **Username**: postgres
-- **Password**: postgres
-
-### Redis Cache
-- **Host**: localhost
-- **Port**: 6379
-
-### MailHog (Email Testing)
-- **SMTP Server**: localhost:1025
-- **Web Interface**: http://localhost:8025
 
 ## Project Structure
 
 ```
-edushield-sis/
-├── src/
-│   └── Api/
-│       └── EduShield.Api/           # ASP.NET Core Minimal API
-├── tests/
-│   └── Api/
-│       └── EduShield.Api.Tests/     # xUnit test project
-├── .github/
-│   └── workflows/
-│       └── ci.yml                   # GitHub Actions CI pipeline
-├── docker-compose.test.yml          # Development dependencies
-├── EduShield.sln                    # Solution file
-├── .gitignore                       # Git ignore rules
-└── README.md                        # This file
+src/
+├── Api/
+│   └── EduShield.Api/          # Web API project
+│       ├── Auth/               # Authentication & Authorization
+│       ├── Data/               # Data access layer
+│       └── Services/           # Business logic services
+├── Core/
+│   └── EduShield.Core/         # Core domain project
+│       ├── Data/               # Entity Framework context
+│       ├── Dtos/               # Data transfer objects
+│       ├── Entities/           # Domain entities
+│       ├── Enums/              # Enumerations
+│       ├── Interfaces/         # Repository and service interfaces
+│       ├── Mapping/            # AutoMapper profiles
+│       └── Validators/         # FluentValidation validators
+tests/
+└── Api/
+    └── EduShield.Api.Tests/    # API integration tests
 ```
 
-## CI/CD
+## Configuration
 
-The project includes a GitHub Actions workflow (`.github/workflows/ci.yml`) that:
+### Development
+- Uses development authentication (bypasses JWT validation)
+- Connects to local PostgreSQL instance
+- Detailed logging enabled
 
-1. Checks out the code
-2. Sets up .NET 8
-3. Starts the Docker Compose test stack
-4. Runs all tests
-5. Tears down the test infrastructure
+### Production
+- JWT authentication with AWS Cognito
+- Secure database connections
+- Minimal logging
 
-## Contributing
+## Database
 
-1. Create a feature branch from `main`
-2. Make your changes
-3. Add/update tests as needed
-4. Ensure all tests pass: `dotnet test`
-5. Submit a pull request
+The application uses PostgreSQL with the following main entities:
+- **Students**: Basic student information
+- **Faculty**: Teacher and staff information
+- **Performance**: Academic performance records
+- **Fees**: Financial records
 
-## Troubleshooting
+## Authentication
 
-### Docker Issues
+### Development Mode
+- No authentication required
+- All endpoints accessible
+- Simulates SchoolAdmin role
 
-```bash
-# Stop all services
-docker compose -f docker-compose.test.yml down
+### Production Mode
+- JWT Bearer token authentication
+- Role-based authorization
+- AWS Cognito integration
 
-# Remove volumes (will delete data)
-docker compose -f docker-compose.test.yml down -v
-
-# Rebuild and restart
-docker compose -f docker-compose.test.yml up -d --build
-```
-
-### Database Connection Issues
-
-Ensure PostgreSQL is running and accessible:
+## Testing
 
 ```bash
-# Check if PostgreSQL is responding
-docker compose -f docker-compose.test.yml exec postgres pg_isready -U postgres
-
-# Connect to database
-docker compose -f docker-compose.test.yml exec postgres psql -U postgres -d edushield_test
-```
-
-### Test Issues
-
-```bash
-# Clean and rebuild
-dotnet clean
-dotnet build
+# Run all tests
+dotnet test
 
 # Run specific test project
 dotnet test tests/Api/EduShield.Api.Tests/
 ```
+
+## Troubleshooting
+
+### Database Connection Issues
+1. Ensure PostgreSQL is running: `docker-compose ps`
+2. Check connection string in `appsettings.Development.json`
+3. Verify database exists: `docker exec -it edushield-postgres psql -U postgres -d edushield`
+
+### Build Issues
+1. Clean solution: `dotnet clean`
+2. Restore packages: `dotnet restore`
+3. Rebuild: `dotnet build`
+
+### Runtime Issues
+1. Check logs for detailed error messages
+2. Verify all required services are running
+3. Check health endpoint: `/healthz`
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests
+5. Submit a pull request
+
+## License
+
+This project is licensed under the MIT License.

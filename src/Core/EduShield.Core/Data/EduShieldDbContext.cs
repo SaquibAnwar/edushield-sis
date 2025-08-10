@@ -122,4 +122,32 @@ public class EduShieldDbContext : DbContext
                   .HasDatabaseName("IX_Fee_DueDate");
         });
     }
+
+    public override int SaveChanges()
+    {
+        StampAudit();
+        return base.SaveChanges();
+    }
+
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        StampAudit();
+        return base.SaveChangesAsync(cancellationToken);
+    }
+
+    private void StampAudit()
+    {
+        var entries = ChangeTracker.Entries()
+            .Where(e => e.Entity is Entities.AuditableEntity && (e.State == EntityState.Added || e.State == EntityState.Modified));
+
+        foreach (var entry in entries)
+        {
+            var aud = (Entities.AuditableEntity)entry.Entity;
+            if (entry.State == EntityState.Added)
+            {
+                aud.CreatedAt = DateTime.UtcNow;
+            }
+            aud.UpdatedAt = DateTime.UtcNow;
+        }
+    }
 }

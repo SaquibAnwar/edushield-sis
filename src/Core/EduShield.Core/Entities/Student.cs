@@ -2,7 +2,7 @@ using EduShield.Core.Enums;
 
 namespace EduShield.Core.Entities;
 
-public class Student
+public class Student : AuditableEntity
 {
     public Guid Id { get; set; }
     public string FirstName { get; set; } = string.Empty;
@@ -13,8 +13,8 @@ public class Student
     public string Address { get; set; } = string.Empty;
     public DateTime EnrollmentDate { get; set; }
     public Gender Gender { get; set; }
-    public DateTime CreatedAt { get; set; }
-    public DateTime UpdatedAt { get; set; }
+    public new DateTime CreatedAt { get; set; }
+    public new DateTime UpdatedAt { get; set; }
     
     // Navigation properties
     public ICollection<Performance> Performances { get; set; } = [];

@@ -12,6 +12,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Mvc;
 using EduShield.Api.Swagger;
+using EduShield.Api.Endpoints;
+using EduShield.Api.Infra;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.ResponseCompression;
+using EduShield.Api.Infra;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.ResponseCompression;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -113,6 +120,21 @@ builder.Services.AddCors(options =>
     });
 });
 
+// Distributed cache (Redis)
+builder.Services.AddStackExchangeRedisCache(o =>
+    o.Configuration = builder.Configuration.GetValue<string>("Redis:ConnectionString") ?? "localhost:6379");
+builder.Services.AddSingleton<ICacheService, DistributedCacheService>();
+
+// Rate limiting & compression
+builder.Services.AddResponseCompression();
+builder.Services.AddRateLimiter(o =>
+    o.AddFixedWindowLimiter("global", opt =>
+    {
+        opt.Window = TimeSpan.FromSeconds(60);
+        opt.PermitLimit = 300;
+        opt.QueueLimit = 0;
+    }));
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -127,6 +149,8 @@ if (!app.Environment.IsEnvironment("Testing"))
     app.UseHttpsRedirection();
 }
 
+app.UseRateLimiter();
+app.UseResponseCompression();
 app.UseCors("AllowAll");
 
 // Add global exception handling middleware
@@ -169,6 +193,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapStudentQueryEndpoints();
 
 if (app.Environment.IsEnvironment("Testing"))
 {

@@ -1,4 +1,5 @@
 using EduShield.Core.Dtos;
+using EduShield.Api.Infra;
 using EduShield.Core.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

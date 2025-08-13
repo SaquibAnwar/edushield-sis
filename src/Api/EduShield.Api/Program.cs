@@ -16,11 +16,17 @@ using EduShield.Api.Endpoints;
 using EduShield.Api.Infra;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.ResponseCompression;
+using OpenTelemetry.Metrics;
+using Serilog;
 using EduShield.Api.Infra;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.ResponseCompression;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Host.UseSerilog((ctx, services, lc) => lc
+    .ReadFrom.Configuration(ctx.Configuration)
+    .Enrich.FromLogContext()
+    .WriteTo.Console());
 
 // Add services to the container.
 builder.Services.AddControllers();
@@ -87,18 +93,24 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
 {
     options.InvalidModelStateResponseFactory = context =>
     {
-        var errors = context.ModelState
-            .Where(kvp => kvp.Value?.Errors.Count > 0)
-            .Select(kvp => new { field = kvp.Key, messages = kvp.Value!.Errors.Select(e => e.ErrorMessage).ToArray() })
-            .ToArray();
-
-        var payload = new
+        var problem = new ProblemDetails
         {
-            error = "Validation failed",
-            details = errors
+            Status = StatusCodes.Status400BadRequest,
+            Title = "Validation failed",
+            Detail = "One or more validation errors occurred.",
+            Instance = context.HttpContext.Request.Path
         };
+        problem.Extensions["traceId"] = context.HttpContext.TraceIdentifier;
+        problem.Extensions["errors"] = context.ModelState
+            .Where(kvp => kvp.Value?.Errors.Count > 0)
+            .ToDictionary(kvp => kvp.Key, kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage).ToArray());
 
-        return new BadRequestObjectResult(payload);
+        var result = new ObjectResult(problem)
+        {
+            StatusCode = StatusCodes.Status400BadRequest
+        };
+        result.ContentTypes.Add("application/problem+json");
+        return result;
     };
 });
 
@@ -126,14 +138,28 @@ builder.Services.AddStackExchangeRedisCache(o =>
 builder.Services.AddSingleton<ICacheService, DistributedCacheService>();
 
 // Rate limiting & compression
-builder.Services.AddResponseCompression();
+builder.Services.AddResponseCompression(opts =>
+{
+    opts.EnableForHttps = true;
+    opts.MimeTypes = Microsoft.AspNetCore.ResponseCompression.ResponseCompressionDefaults.MimeTypes
+        .Concat(new[] { "application/json" });
+});
 builder.Services.AddRateLimiter(o =>
     o.AddFixedWindowLimiter("global", opt =>
     {
-        opt.Window = TimeSpan.FromSeconds(60);
+        opt.Window = TimeSpan.FromMinutes(1);
         opt.PermitLimit = 300;
         opt.QueueLimit = 0;
     }));
+
+// Correlation
+builder.Services.AddSingleton<CorrelationMiddleware>();
+
+// OpenTelemetry (minimal metrics)
+builder.Services.AddOpenTelemetry()
+    .WithMetrics(b => b.AddAspNetCoreInstrumentation()
+                       .AddHttpClientInstrumentation()
+                       .AddConsoleExporter());
 
 var app = builder.Build();
 
@@ -149,6 +175,9 @@ if (!app.Environment.IsEnvironment("Testing"))
     app.UseHttpsRedirection();
 }
 
+app.UseGlobalProblemDetails();
+app.UseMiddleware<CorrelationMiddleware>();
+app.UseSerilogRequestLogging();
 app.UseRateLimiter();
 app.UseResponseCompression();
 app.UseCors("AllowAll");
@@ -195,14 +224,9 @@ app.UseAuthorization();
 app.MapControllers();
 app.MapStudentQueryEndpoints();
 
-if (app.Environment.IsEnvironment("Testing"))
-{
-    app.MapGet("/health", () => Results.Ok("Healthy"));
-}
-else
-{
-    app.MapHealthChecks("/health");
-}
+app.MapHealthChecks("/healthz/live");
+app.MapHealthChecks("/healthz/ready");
+app.MapHealthChecks("/health");
 
 // Ensure database is created and migrations are applied (skip during Testing)
 if (!app.Environment.IsEnvironment("Testing"))

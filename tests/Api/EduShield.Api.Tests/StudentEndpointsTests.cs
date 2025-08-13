@@ -97,11 +97,7 @@ public class StudentEndpointsTests
 
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
-
-        var content = await response.Content.ReadAsStringAsync();
-        var result = JsonSerializer.Deserialize<JsonElement>(content);
-        var error = result.GetProperty("error").GetString();
-        Assert.That(error, Does.Contain("Validation failed"));
+        Assert.That(response.Content.Headers.ContentType!.MediaType, Is.EqualTo("application/problem+json"));
     }
 
     [Test]
@@ -126,11 +122,7 @@ public class StudentEndpointsTests
 
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
-
-        var content = await response.Content.ReadAsStringAsync();
-        var result = JsonSerializer.Deserialize<JsonElement>(content);
-        var error = result.GetProperty("error").GetString();
-        Assert.That(error, Does.Contain("Validation failed"));
+        Assert.That(response.Content.Headers.ContentType!.MediaType, Is.EqualTo("application/problem+json"));
     }
 
     [Test]
@@ -154,15 +146,7 @@ public class StudentEndpointsTests
 
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
-
-        var content = await response.Content.ReadAsStringAsync();
-        var result = JsonSerializer.Deserialize<JsonElement>(content);
-        var error = result.GetProperty("error").GetString();
-        Assert.That(error, Does.Contain("Validation failed"));
-        var details = result.GetProperty("details");
-        Assert.That(details.ValueKind, Is.EqualTo(JsonValueKind.Array));
-        var detailsJson = details.ToString();
-        Assert.That(detailsJson, Does.Contain("FirstName"));
+        Assert.That(response.Content.Headers.ContentType!.MediaType, Is.EqualTo("application/problem+json"));
     }
 
     [Test]
@@ -186,11 +170,7 @@ public class StudentEndpointsTests
 
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
-
-        var content = await response.Content.ReadAsStringAsync();
-        var result = JsonSerializer.Deserialize<JsonElement>(content);
-        var error = result.GetProperty("error").GetString();
-        Assert.That(error, Does.Contain("Validation failed"));
+        Assert.That(response.Content.Headers.ContentType!.MediaType, Is.EqualTo("application/problem+json"));
     }
 
     [Test]

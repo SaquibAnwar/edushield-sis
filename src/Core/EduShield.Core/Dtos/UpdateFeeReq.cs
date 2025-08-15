@@ -3,11 +3,8 @@ using EduShield.Core.Enums;
 
 namespace EduShield.Core.Dtos;
 
-public class CreateFeeReq
+public class UpdateFeeReq
 {
-    [Required(ErrorMessage = "Student ID is required")]
-    public Guid StudentId { get; set; }
-    
     [Required(ErrorMessage = "Fee type is required")]
     public FeeType FeeType { get; set; }
     

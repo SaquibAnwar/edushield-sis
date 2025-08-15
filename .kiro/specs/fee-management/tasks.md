@@ -1,4 +1,4 @@
-# Fee Management System Implementation Plan
+c# Fee Management System Implementation Plan
 
 - [x] 1. Create core entities and enums
   - Create FeeType and FeeStatus enums in the Enums directory
@@ -7,7 +7,7 @@
   - Update Student entity to include Fee navigation property
   - _Requirements: 1.1, 1.2, 1.3, 2.1, 3.1_
 
-- [ ] 2. Create DTOs and request models
+- [x] 2. Create DTOs and request models
   - Implement CreateFeeReq DTO with validation attributes
   - Implement UpdateFeeReq DTO for fee modifications
   - Implement PaymentReq DTO for payment recording

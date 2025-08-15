@@ -67,7 +67,7 @@ c# Fee Management System Implementation Plan
   - Set up proper indexes for query performance
   - _Requirements: 1.1, 1.5, 2.1, 3.1_
 
-- [ ] 9. Register services in dependency injection
+- [x] 9. Register services in dependency injection
   - Register IFeeRepo and FeeRepo in Program.cs
   - Register IFeeService and FeeService in Program.cs
   - Add AutoMapper profile registration

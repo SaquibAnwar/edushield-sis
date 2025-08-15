@@ -24,7 +24,7 @@ c# Fee Management System Implementation Plan
   - Add validation to prevent payments exceeding outstanding amounts
   - _Requirements: 1.3, 1.4, 3.2, 6.1, 6.4_
 
-- [ ] 4. Create AutoMapper profiles
+- [x] 4. Create AutoMapper profiles
   - Implement FeeMappingProfile for Fee entity to FeeDto mapping
   - Add mapping for calculated properties (OutstandingAmount, IsOverdue)
   - Implement PaymentMappingProfile for Payment entity mappings

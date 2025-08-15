@@ -52,7 +52,7 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 // Add AutoMapper
-builder.Services.AddAutoMapper(typeof(StudentMappingProfile), typeof(FacultyMappingProfile), typeof(PerformanceMappingProfile));
+builder.Services.AddAutoMapper(typeof(StudentMappingProfile), typeof(FacultyMappingProfile), typeof(PerformanceMappingProfile), typeof(FeeMappingProfile), typeof(PaymentMappingProfile));
 
 // Add FluentValidation
 builder.Services.AddFluentValidationAutoValidation()
@@ -76,11 +76,13 @@ else
 builder.Services.AddScoped<IStudentRepo, StudentRepo>();
 builder.Services.AddScoped<IFacultyRepo, FacultyRepo>();
 builder.Services.AddScoped<IPerformanceRepo, PerformanceRepo>();
+builder.Services.AddScoped<IFeeRepo, FeeRepo>();
 
 // Add Services
 builder.Services.AddScoped<IStudentService, StudentService>();
 builder.Services.AddScoped<IFacultyService, FacultyService>();
 builder.Services.AddScoped<IPerformanceService, PerformanceService>();
+builder.Services.AddScoped<IFeeService, FeeService>();
 
 // Add Authentication
 builder.Services.AddAuthentication("DevAuth")

@@ -29,7 +29,7 @@ public class ErrorAndCorrelationTests
     {
         // Hit unknown student to trigger 404 via controller returning NotFound
         var cid = Guid.NewGuid().ToString("N");
-        var req = new HttpRequestMessage(HttpMethod.Get, $"/api/student/{Guid.NewGuid()}");
+        var req = new HttpRequestMessage(HttpMethod.Get, $"/api/v1/student/{Guid.NewGuid()}");
         req.Headers.Add("X-Correlation-Id", cid);
         var res = await _client.SendAsync(req);
         Assert.That(res.Headers.Contains("X-Correlation-Id"), Is.True);
@@ -39,7 +39,7 @@ public class ErrorAndCorrelationTests
     [Test]
     public async Task Validation_BadRequest_Returns_ProblemDetails()
     {
-        var res = await _client.PostAsync("/api/student", new StringContent("{}", System.Text.Encoding.UTF8, "application/json"));
+        var res = await _client.PostAsync("/api/v1/student", new StringContent("{}", System.Text.Encoding.UTF8, "application/json"));
         Assert.That(res.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
         Assert.That(res.Content.Headers.ContentType!.MediaType, Is.EqualTo("application/problem+json"));
         var problem = await res.Content.ReadFromJsonAsync<ProblemDetails>();
@@ -48,6 +48,7 @@ public class ErrorAndCorrelationTests
         Assert.That(problem.Extensions.ContainsKey("traceId"), Is.True);
     }
 }
+
 
 
 

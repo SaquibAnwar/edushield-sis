@@ -12,15 +12,12 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Mvc;
 using EduShield.Api.Swagger;
-using EduShield.Api.Endpoints;
+
 using EduShield.Api.Infra;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.ResponseCompression;
 using OpenTelemetry.Metrics;
 using Serilog;
-using EduShield.Api.Infra;
-using Microsoft.AspNetCore.RateLimiting;
-using Microsoft.AspNetCore.ResponseCompression;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Host.UseSerilog((ctx, services, lc) => lc
@@ -55,7 +52,7 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 // Add AutoMapper
-builder.Services.AddAutoMapper(typeof(StudentMappingProfile));
+builder.Services.AddAutoMapper(typeof(StudentMappingProfile), typeof(FacultyMappingProfile));
 
 // Add FluentValidation
 builder.Services.AddFluentValidationAutoValidation()
@@ -77,9 +74,11 @@ else
 
 // Add Repositories
 builder.Services.AddScoped<IStudentRepo, StudentRepo>();
+builder.Services.AddScoped<IFacultyRepo, FacultyRepo>();
 
 // Add Services
 builder.Services.AddScoped<IStudentService, StudentService>();
+builder.Services.AddScoped<IFacultyService, FacultyService>();
 
 // Add Authentication
 builder.Services.AddAuthentication("DevAuth")
@@ -222,18 +221,27 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-app.MapStudentQueryEndpoints();
 
-app.MapHealthChecks("/healthz/live");
-app.MapHealthChecks("/healthz/ready");
-app.MapHealthChecks("/health");
+app.MapHealthChecks("/api/v1/health/live");
+app.MapHealthChecks("/api/v1/health/ready");
 
 // Ensure database is created and migrations are applied (skip during Testing)
+// Temporarily disabled for demo purposes
 if (!app.Environment.IsEnvironment("Testing"))
 {
     using var scope = app.Services.CreateScope();
     var context = scope.ServiceProvider.GetRequiredService<EduShieldDbContext>();
-    context.Database.Migrate();
+    
+    // For in-memory database, ensure it's created
+    if (context.Database.IsInMemory())
+    {
+        context.Database.EnsureCreated();
+    }
+    else
+    {
+        // For PostgreSQL, apply migrations
+        // context.Database.Migrate();
+    }
 }
 
 app.Run();

@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace EduShield.Api.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/v1/health")]
 public class HealthController : ControllerBase
 {
     [HttpGet]

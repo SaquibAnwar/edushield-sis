@@ -2,17 +2,26 @@ using EduShield.Core.Enums;
 
 namespace EduShield.Core.Entities;
 
-public class Faculty(Guid facultyId, string name, string department, string subject, Gender gender)
+public class Faculty : AuditableEntity
 {
-    public Faculty() : this(Guid.Empty, string.Empty, string.Empty, string.Empty, Gender.Other)
+    public Faculty() : base()
     {
     }
     
-    public Guid FacultyId { get; init; } = facultyId;
-    public string Name { get; set; } = name;
-    public string Department { get; set; } = department;
-    public string Subject { get; set; } = subject;
-    public Gender Gender { get; set; } = gender;
+    public Faculty(Guid facultyId, string name, string department, string subject, Gender gender) : base()
+    {
+        FacultyId = facultyId;
+        Name = name;
+        Department = department;
+        Subject = subject;
+        Gender = gender;
+    }
+    
+    public Guid FacultyId { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Department { get; set; } = string.Empty;
+    public string Subject { get; set; } = string.Empty;
+    public Gender Gender { get; set; }
     public ICollection<Performance> Performances { get; init; } = [];
     
     // Navigation property to Students

@@ -53,7 +53,7 @@ public class StudentEndpointsTests
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/student", request);
+        var response = await _client.PostAsJsonAsync("/api/v1/student", request);
 
         // Assert
         if (!response.IsSuccessStatusCode)
@@ -72,7 +72,7 @@ public class StudentEndpointsTests
         Assert.That(id, Is.Not.EqualTo(Guid.Empty));
 
         // Verify location header format
-        var expectedLocation = $"/api/student/{id}".ToLowerInvariant();
+        var expectedLocation = $"/api/v1/student/{id}".ToLowerInvariant();
         Assert.That(response.Headers.Location!.ToString().ToLowerInvariant(), Does.EndWith(expectedLocation));
     }
 
@@ -93,7 +93,7 @@ public class StudentEndpointsTests
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/student", request);
+        var response = await _client.PostAsJsonAsync("/api/v1/student", request);
 
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
@@ -118,7 +118,7 @@ public class StudentEndpointsTests
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/student", request);
+        var response = await _client.PostAsJsonAsync("/api/v1/student", request);
 
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
@@ -142,7 +142,7 @@ public class StudentEndpointsTests
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/student", request);
+        var response = await _client.PostAsJsonAsync("/api/v1/student", request);
 
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
@@ -166,7 +166,7 @@ public class StudentEndpointsTests
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/student", request);
+        var response = await _client.PostAsJsonAsync("/api/v1/student", request);
 
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
@@ -189,13 +189,13 @@ public class StudentEndpointsTests
             Gender = Gender.F
         };
 
-        var createResponse = await _client.PostAsJsonAsync("/api/student", createRequest);
+        var createResponse = await _client.PostAsJsonAsync("/api/v1/student", createRequest);
         var createContent = await createResponse.Content.ReadAsStringAsync();
         var createResult = JsonSerializer.Deserialize<JsonElement>(createContent);
         var studentId = createResult.GetProperty("id").GetGuid();
 
         // Act
-        var response = await _client.GetAsync($"/api/student/{studentId}");
+        var response = await _client.GetAsync($"/api/v1/student/{studentId}");
 
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
@@ -215,7 +215,7 @@ public class StudentEndpointsTests
     public async Task GetStudent_InvalidGuidFormat_ReturnsBadRequest()
     {
         // Act
-        var response = await _client.GetAsync($"/api/student/{Guid.NewGuid()}");
+        var response = await _client.GetAsync($"/api/v1/student/{Guid.NewGuid()}");
 
         // Assert - Non-existing GUID should return 404 NotFound
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
@@ -229,7 +229,7 @@ public class StudentEndpointsTests
         var content = new StringContent(invalidJson, System.Text.Encoding.UTF8, "application/json");
 
         // Act
-        var response = await _client.PostAsync("/api/student", content);
+        var response = await _client.PostAsync("/api/v1/student", content);
 
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
@@ -256,7 +256,7 @@ public class StudentEndpointsTests
         };
 
         // Act
-        var response = await client.PostAsJsonAsync("/api/student", request);
+        var response = await client.PostAsJsonAsync("/api/v1/student", request);
 
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized));
@@ -271,7 +271,7 @@ public class StudentEndpointsTests
         // Our GET endpoints are anonymous; ensure 200 even when auth is off
         TestAuthHandler.ShouldAuthenticate = false;
         var client = _factory.CreateClient();
-        var response = await client.GetAsync($"/api/student");
+        var response = await client.GetAsync($"/api/v1/student");
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         TestAuthHandler.ShouldAuthenticate = true;
     }
@@ -283,7 +283,7 @@ public class StudentEndpointsTests
         var unauthenticatedClient = _factory.CreateClient();
 
         // Act
-        var response = await unauthenticatedClient.GetAsync("/health");
+        var response = await unauthenticatedClient.GetAsync("/api/v1/health");
 
         // Assert - Health check should not require authentication
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
@@ -299,7 +299,7 @@ public class StudentEndpointsTests
     public async Task GetAllStudents_WithAuth_ReturnsOk()
     {
         // Act
-        var response = await _client.GetAsync("/api/student");
+        var response = await _client.GetAsync("/api/v1/student");
 
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
@@ -313,7 +313,7 @@ public class StudentEndpointsTests
     {
         TestAuthHandler.ShouldAuthenticate = false;
         var client = _factory.CreateClient();
-        var response = await client.GetAsync("/api/student");
+        var response = await client.GetAsync("/api/v1/student");
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         TestAuthHandler.ShouldAuthenticate = true;
     }

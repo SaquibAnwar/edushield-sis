@@ -1,24 +1,26 @@
+using EduShield.Core.Enums;
+
 namespace EduShield.Core.Entities;
 
-public class Fee(Guid feeId, Guid studentId, string feeType, decimal amount, 
-                DateTime dueDate, bool isPaid = false, DateTime? paidDate = null)
+public class Fee : AuditableEntity
 {
-    public Fee() : this(Guid.Empty, Guid.Empty, string.Empty, 0, DateTime.UtcNow)
-    {
-    }
+    public Guid FeeId { get; set; }
+    public Guid StudentId { get; set; }
+    public FeeType FeeType { get; set; }
+    public decimal Amount { get; set; }
+    public decimal PaidAmount { get; set; }
+    public DateTime DueDate { get; set; }
+    public string Description { get; set; } = string.Empty;
+    public FeeStatus Status { get; set; }
+    public bool IsPaid { get; set; }
+    public DateTime? PaidDate { get; set; }
     
-    public Guid FeeId { get; init; } = feeId;
-    public Guid StudentId { get; set; } = studentId;
-    public string FeeType { get; set; } = feeType;
-    public decimal Amount { get; set; } = amount;
-    public DateTime DueDate { get; set; } = dueDate;
-    public bool IsPaid { get; set; } = isPaid;
-    public DateTime? PaidDate { get; set; } = paidDate;
-    
-    // Navigation property
+    // Navigation properties
     public Student? Student { get; set; }
+    public ICollection<Payment> Payments { get; set; } = [];
     
     // Calculated properties
-    public bool IsOverdue => !IsPaid && DateTime.UtcNow > DueDate;
+    public decimal OutstandingAmount => Amount - PaidAmount;
+    public bool IsOverdue => DateTime.UtcNow > DueDate && OutstandingAmount > 0;
     public int DaysOverdue => IsOverdue ? (DateTime.UtcNow - DueDate).Days : 0;
 }

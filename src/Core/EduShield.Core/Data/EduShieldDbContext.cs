@@ -14,6 +14,7 @@ public class EduShieldDbContext : DbContext
     public DbSet<Faculty> Faculty => Set<Faculty>();
     public DbSet<Performance> Performances => Set<Performance>();
     public DbSet<Fee> Fees => Set<Fee>();
+    public DbSet<Payment> Payments => Set<Payment>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -105,21 +106,50 @@ public class EduShieldDbContext : DbContext
         {
             entity.ToTable("Fees");
             entity.HasKey(e => e.FeeId);
-            entity.Property(e => e.FeeType).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.FeeType).IsRequired();
             entity.Property(e => e.Amount).HasPrecision(10, 2);
+            entity.Property(e => e.PaidAmount).HasPrecision(10, 2);
             entity.Property(e => e.DueDate).IsRequired();
+            entity.Property(e => e.Description).HasMaxLength(500);
+            entity.Property(e => e.Status).IsRequired();
             entity.Property(e => e.IsPaid).IsRequired();
             entity.Property(e => e.PaidDate).IsRequired(false);
 
             // Ignore calculated properties
+            entity.Ignore(e => e.OutstandingAmount);
             entity.Ignore(e => e.IsOverdue);
             entity.Ignore(e => e.DaysOverdue);
+
+            // Configure relationships
+            entity.HasMany(e => e.Payments)
+                  .WithOne(p => p.Fee)
+                  .HasForeignKey(p => p.FeeId)
+                  .OnDelete(DeleteBehavior.Cascade);
 
             // Configure indexes
             entity.HasIndex(e => new { e.StudentId, e.IsPaid })
                   .HasDatabaseName("IX_Fee_Student_Paid");
             entity.HasIndex(e => e.DueDate)
                   .HasDatabaseName("IX_Fee_DueDate");
+            entity.HasIndex(e => e.FeeType)
+                  .HasDatabaseName("IX_Fee_Type");
+        });
+
+        // Configure Payment entity
+        modelBuilder.Entity<Payment>(entity =>
+        {
+            entity.ToTable("Payments");
+            entity.HasKey(e => e.PaymentId);
+            entity.Property(e => e.Amount).HasPrecision(10, 2);
+            entity.Property(e => e.PaymentDate).IsRequired();
+            entity.Property(e => e.PaymentMethod).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.TransactionReference).HasMaxLength(100);
+
+            // Configure indexes
+            entity.HasIndex(e => e.FeeId)
+                  .HasDatabaseName("IX_Payment_Fee");
+            entity.HasIndex(e => e.PaymentDate)
+                  .HasDatabaseName("IX_Payment_Date");
         });
     }
 

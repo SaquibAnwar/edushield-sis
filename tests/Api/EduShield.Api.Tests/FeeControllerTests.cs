@@ -56,9 +56,9 @@ public class FeeControllerTests
 
         // Assert
         Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
-        var okResult = (OkObjectResult)result.Result;
-        var returnedFees = (IEnumerable<FeeDto>)okResult.Value;
-        Assert.That(returnedFees.Count(), Is.EqualTo(2));
+        var okResult = result.Result as OkObjectResult;
+        var returnedFees = okResult?.Value as IEnumerable<FeeDto>;
+        Assert.That(returnedFees?.Count(), Is.EqualTo(2));
     }
 
     [Test]
@@ -1053,9 +1053,9 @@ public class FeeControllerTests
             x => x.Log(
                 LogLevel.Warning,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("Validation error")),
+                It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("Invalid argument when creating fee")),
                 It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
     }
 

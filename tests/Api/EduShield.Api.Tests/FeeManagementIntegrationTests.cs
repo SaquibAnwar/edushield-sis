@@ -1,9 +1,11 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using EduShield.Core.Data;
 using EduShield.Core.Dtos;
 using EduShield.Core.Enums;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace EduShield.Api.Tests;
 
@@ -31,10 +33,16 @@ public class FeeManagementIntegrationTests
     }
 
     [SetUp]
-    public void SetUp()
+    public async Task SetUp()
     {
         // Ensure authentication is enabled for each test
         TestAuthHandler.ShouldAuthenticate = true;
+        
+        // Clean up database before each test
+        using var scope = _factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<EduShieldDbContext>();
+        await dbContext.Database.EnsureDeletedAsync();
+        await dbContext.Database.EnsureCreatedAsync();
     }
 
     #region End-to-End Fee Management Workflows
@@ -81,12 +89,18 @@ public class FeeManagementIntegrationTests
         var partialPaymentRequest = new PaymentReq
         {
             Amount = 400.00m,
-            PaymentDate = DateTime.UtcNow,
+            PaymentDate = DateTime.Today.AddDays(-1),
             PaymentMethod = "Credit Card",
             TransactionReference = "TXN-001"
         };
 
         var paymentResponse = await _client.PostAsJsonAsync($"/api/v1/fees/{feeId}/payments", partialPaymentRequest);
+        if (paymentResponse.StatusCode != HttpStatusCode.Created)
+        {
+            var errorContent = await paymentResponse.Content.ReadAsStringAsync();
+            Console.WriteLine($"Payment failed with status: {paymentResponse.StatusCode}");
+            Console.WriteLine($"Error content: {errorContent}");
+        }
         Assert.That(paymentResponse.StatusCode, Is.EqualTo(HttpStatusCode.Created));
 
         // Verify fee status after partial payment
@@ -102,7 +116,7 @@ public class FeeManagementIntegrationTests
         var finalPaymentRequest = new PaymentReq
         {
             Amount = 600.00m,
-            PaymentDate = DateTime.UtcNow,
+            PaymentDate = DateTime.Today.AddDays(-1),
             PaymentMethod = "Bank Transfer",
             TransactionReference = "TXN-002"
         };
@@ -184,7 +198,7 @@ public class FeeManagementIntegrationTests
         var paymentRequest = new PaymentReq
         {
             Amount = 1000.00m,
-            PaymentDate = DateTime.UtcNow,
+            PaymentDate = DateTime.Today.AddDays(-1),
             PaymentMethod = "Credit Card"
         };
 
@@ -373,7 +387,7 @@ public class FeeManagementIntegrationTests
         var paymentRequest = new PaymentReq
         {
             Amount = 1000m,
-            PaymentDate = DateTime.UtcNow,
+            PaymentDate = DateTime.Today.AddDays(-1),
             PaymentMethod = "Credit Card"
         };
 
@@ -495,9 +509,9 @@ public class FeeManagementIntegrationTests
         var feeId = createResult.GetProperty("id").GetGuid();
 
         // Act - Make multiple concurrent payments
-        var payment1 = new PaymentReq { Amount = 400m, PaymentDate = DateTime.UtcNow, PaymentMethod = "Credit Card 1" };
-        var payment2 = new PaymentReq { Amount = 300m, PaymentDate = DateTime.UtcNow, PaymentMethod = "Credit Card 2" };
-        var payment3 = new PaymentReq { Amount = 300m, PaymentDate = DateTime.UtcNow, PaymentMethod = "Credit Card 3" };
+        var payment1 = new PaymentReq { Amount = 400m, PaymentDate = DateTime.Today.AddDays(-1), PaymentMethod = "Credit Card" };
+        var payment2 = new PaymentReq { Amount = 300m, PaymentDate = DateTime.Today.AddDays(-1), PaymentMethod = "Debit Card" };
+        var payment3 = new PaymentReq { Amount = 300m, PaymentDate = DateTime.Today.AddDays(-1), PaymentMethod = "Bank Transfer" };
 
         var tasks = new[]
         {
@@ -507,6 +521,26 @@ public class FeeManagementIntegrationTests
         };
 
         var responses = await Task.WhenAll(tasks);
+
+        // Debug: Check what status codes we're getting
+        var statusCodes = responses.Select(r => r.StatusCode).ToArray();
+        var errorMessages = new List<string>();
+        
+        for (int i = 0; i < responses.Length; i++)
+        {
+            if (!responses[i].IsSuccessStatusCode)
+            {
+                var errorContent = await responses[i].Content.ReadAsStringAsync();
+                errorMessages.Add($"Payment {i + 1}: {responses[i].StatusCode} - {errorContent}");
+            }
+        }
+
+        // If all failed, output debug info
+        if (responses.All(r => !r.IsSuccessStatusCode))
+        {
+            var debugInfo = string.Join("\n", errorMessages);
+            Assert.Fail($"All payments failed. Debug info:\n{debugInfo}");
+        }
 
         // Assert - At least two payments should succeed, one might fail due to exceeding amount
         var successCount = responses.Count(r => r.StatusCode == HttpStatusCode.Created);
@@ -587,7 +621,7 @@ public class FeeManagementIntegrationTests
         var paymentRequest = new PaymentReq
         {
             Amount = 100.00m,
-            PaymentDate = DateTime.UtcNow,
+            PaymentDate = DateTime.Today.AddDays(-1),
             PaymentMethod = "Cash"
         };
 

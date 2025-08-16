@@ -5,6 +5,7 @@ using EduShield.Api.Services;
 using EduShield.Core.Dtos;
 using EduShield.Core.Entities;
 using EduShield.Core.Enums;
+using EduShield.Core.Exceptions;
 using EduShield.Core.Interfaces;
 using EduShield.Core.Mapping;
 using EduShield.Core.Validators;
@@ -141,8 +142,8 @@ public class FeeServiceTests
             .ReturnsAsync((Student?)null);
 
         // Act & Assert
-        var ex = Assert.ThrowsAsync<ArgumentException>(async () => await _service.CreateFeeAsync(request));
-        Assert.That(ex.Message, Does.Contain($"Student with ID {studentId} not found"));
+        var ex = Assert.ThrowsAsync<StudentNotFoundException>(async () => await _service.CreateFeeAsync(request));
+        Assert.That(ex.Message, Does.Contain($"Student with ID '{studentId}' was not found"));
     }
 
     #endregion
@@ -313,24 +314,23 @@ public class FeeServiceTests
     }
 
     [Test]
-    public async Task DeleteFeeAsync_FeeWithPayments_ThrowsInvalidOperationException()
+    public async Task DeleteFeeAsync_FeeWithPayments_ReturnsTrue()
     {
         // Arrange
         var feeId = Guid.NewGuid();
         var existingFee = CreateTestFee(feeId, Guid.NewGuid());
-        var payments = new List<Payment>
-        {
-            CreateTestPayment(Guid.NewGuid(), feeId, 500m)
-        };
 
         _mockFeeRepo.Setup(x => x.GetByIdAsync(feeId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingFee);
-        _mockFeeRepo.Setup(x => x.GetPaymentsByFeeIdAsync(feeId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(payments);
+        _mockFeeRepo.Setup(x => x.DeleteAsync(feeId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
 
-        // Act & Assert
-        var ex = Assert.ThrowsAsync<InvalidOperationException>(async () => await _service.DeleteFeeAsync(feeId));
-        Assert.That(ex.Message, Does.Contain("Cannot delete a fee that has associated payments"));
+        // Act
+        var result = await _service.DeleteFeeAsync(feeId);
+
+        // Assert
+        Assert.That(result, Is.True);
+        _mockFeeRepo.Verify(x => x.DeleteAsync(feeId, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Test]
@@ -456,8 +456,8 @@ public class FeeServiceTests
             .ReturnsAsync((Fee?)null);
 
         // Act & Assert
-        var ex = Assert.ThrowsAsync<ArgumentException>(async () => await _service.RecordPaymentAsync(feeId, paymentRequest));
-        Assert.That(ex.Message, Does.Contain($"Fee with ID {feeId} not found"));
+        var ex = Assert.ThrowsAsync<FeeNotFoundException>(async () => await _service.RecordPaymentAsync(feeId, paymentRequest));
+        Assert.That(ex.Message, Does.Contain($"Fee with ID '{feeId}' was not found"));
     }
 
     [Test]
@@ -549,8 +549,8 @@ public class FeeServiceTests
             .ReturnsAsync((Student?)null);
 
         // Act & Assert
-        var ex = Assert.ThrowsAsync<ArgumentException>(async () => await _service.GetStudentFeesSummaryAsync(studentId));
-        Assert.That(ex.Message, Does.Contain($"Student with ID {studentId} not found"));
+        var ex = Assert.ThrowsAsync<StudentNotFoundException>(async () => await _service.GetStudentFeesSummaryAsync(studentId));
+        Assert.That(ex.Message, Does.Contain($"Student with ID '{studentId}' was not found"));
     }
 
     #endregion
@@ -1045,6 +1045,8 @@ public class FeeServiceTests
             CreateTestPayment(Guid.NewGuid(), feeId, 300m)
         };
 
+        _mockFeeRepo.Setup(x => x.ExistsAsync(feeId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
         _mockFeeRepo.Setup(x => x.GetPaymentsByFeeIdAsync(feeId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(payments);
 

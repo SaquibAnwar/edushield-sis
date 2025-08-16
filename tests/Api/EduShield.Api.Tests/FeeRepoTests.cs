@@ -517,7 +517,7 @@ public class FeeRepoTests
     #region Payment Recording Tests
 
     [Test]
-    public async Task AddPaymentAsync_ValidPayment_AddsPaymentAndUpdatesFee()
+    public async Task AddPaymentAsync_ValidPayment_AddsPaymentOnly()
     {
         // Arrange
         var fee = new Fee
@@ -551,17 +551,20 @@ public class FeeRepoTests
         Assert.That(result.PaymentId, Is.EqualTo(payment.PaymentId));
         Assert.That(result.Amount, Is.EqualTo(300.00m));
 
-        // Verify fee was updated
+        // Verify payment was added but fee was NOT updated (that's service responsibility)
+        var payments = await _repo.GetPaymentsByFeeIdAsync(fee.FeeId);
+        Assert.That(payments.Count(), Is.EqualTo(1));
+        Assert.That(payments.First().Amount, Is.EqualTo(300.00m));
+
+        // Fee should remain unchanged
         var updatedFee = await _repo.GetByIdAsync(fee.FeeId);
         Assert.That(updatedFee, Is.Not.Null);
-        Assert.That(updatedFee!.PaidAmount, Is.EqualTo(300.00m));
-        Assert.That(updatedFee.Status, Is.EqualTo(FeeStatus.PartiallyPaid));
-        Assert.That(updatedFee.IsPaid, Is.False);
-        Assert.That(updatedFee.OutstandingAmount, Is.EqualTo(700.00m));
+        Assert.That(updatedFee!.PaidAmount, Is.EqualTo(0m)); // Repository doesn't update fee
+        Assert.That(updatedFee.Status, Is.EqualTo(FeeStatus.Pending)); // Repository doesn't update status
     }
 
     [Test]
-    public async Task AddPaymentAsync_FullPayment_MarksFeeAsPaid()
+    public async Task AddPaymentAsync_PaymentForPartiallyPaidFee_AddsPaymentOnly()
     {
         // Arrange
         var fee = new Fee
@@ -592,15 +595,18 @@ public class FeeRepoTests
 
         // Assert
         Assert.That(result, Is.Not.Null);
+        Assert.That(result.Amount, Is.EqualTo(300.00m));
 
-        // Verify fee was marked as paid
+        // Verify payment was added
+        var payments = await _repo.GetPaymentsByFeeIdAsync(fee.FeeId);
+        Assert.That(payments.Count(), Is.EqualTo(1));
+        Assert.That(payments.First().Amount, Is.EqualTo(300.00m));
+
+        // Fee should remain unchanged (service handles updates)
         var updatedFee = await _repo.GetByIdAsync(fee.FeeId);
         Assert.That(updatedFee, Is.Not.Null);
-        Assert.That(updatedFee!.PaidAmount, Is.EqualTo(500.00m));
-        Assert.That(updatedFee.Status, Is.EqualTo(FeeStatus.Paid));
-        Assert.That(updatedFee.IsPaid, Is.True);
-        Assert.That(updatedFee.PaidDate, Is.Not.Null);
-        Assert.That(updatedFee.OutstandingAmount, Is.EqualTo(0m));
+        Assert.That(updatedFee!.PaidAmount, Is.EqualTo(200.00m)); // Repository doesn't update fee
+        Assert.That(updatedFee.Status, Is.EqualTo(FeeStatus.PartiallyPaid)); // Repository doesn't update status
     }
 
     [Test]

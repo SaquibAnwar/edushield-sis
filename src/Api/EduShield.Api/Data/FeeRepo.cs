@@ -118,23 +118,8 @@ public class FeeRepo : IFeeRepo
         if (payment.Amount > outstandingAmount)
             throw new InvalidOperationException($"Payment amount {payment.Amount:C} exceeds outstanding amount {outstandingAmount:C}");
 
-        // Add payment
+        // Add payment only - fee updates are handled by the service
         _context.Payments.Add(payment);
-        
-        // Update fee paid amount and status
-        fee.PaidAmount += payment.Amount;
-        
-        if (fee.PaidAmount >= fee.Amount)
-        {
-            fee.Status = FeeStatus.Paid;
-            fee.IsPaid = true;
-            fee.PaidDate = payment.PaymentDate;
-        }
-        else if (fee.PaidAmount > 0)
-        {
-            fee.Status = FeeStatus.PartiallyPaid;
-        }
-
         await _context.SaveChangesAsync(cancellationToken);
         return payment;
     }

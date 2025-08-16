@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Authorization;
 using EduShield.Core.Dtos;
 using EduShield.Core.Interfaces;
 using EduShield.Core.Enums;
+using EduShield.Core.Exceptions;
+using FluentValidation;
 
 namespace EduShield.Api.Controllers;
 
@@ -28,16 +30,8 @@ public class FeeController : ControllerBase
     [Authorize]
     public async Task<ActionResult<IEnumerable<FeeDto>>> GetAllFees(CancellationToken cancellationToken)
     {
-        try
-        {
-            var fees = await _feeService.GetAllFeesAsync(cancellationToken);
-            return Ok(fees);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error retrieving all fees");
-            return StatusCode(500, new { error = "An error occurred while retrieving fees" });
-        }
+        var fees = await _feeService.GetAllFeesAsync(cancellationToken);
+        return Ok(fees);
     }
 
     /// <summary>
@@ -47,20 +41,12 @@ public class FeeController : ControllerBase
     [Authorize]
     public async Task<ActionResult<FeeDto>> GetFeeById(Guid id, CancellationToken cancellationToken)
     {
-        try
+        var fee = await _feeService.GetFeeByIdAsync(id, cancellationToken);
+        if (fee == null)
         {
-            var fee = await _feeService.GetFeeByIdAsync(id, cancellationToken);
-            if (fee == null)
-            {
-                return NotFound(new { error = "Fee not found" });
-            }
-            return Ok(fee);
+            throw new FeeNotFoundException(id);
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error retrieving fee with ID: {FeeId}", id);
-            return StatusCode(500, new { error = "An error occurred while retrieving the fee" });
-        }
+        return Ok(fee);
     }
 
     /// <summary>
@@ -70,16 +56,8 @@ public class FeeController : ControllerBase
     [Authorize]
     public async Task<ActionResult<IEnumerable<FeeDto>>> GetFeesByStudentId(Guid studentId, CancellationToken cancellationToken)
     {
-        try
-        {
-            var fees = await _feeService.GetFeesByStudentIdAsync(studentId, cancellationToken);
-            return Ok(fees);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error retrieving fees for student ID: {StudentId}", studentId);
-            return StatusCode(500, new { error = "An error occurred while retrieving student fees" });
-        }
+        var fees = await _feeService.GetFeesByStudentIdAsync(studentId, cancellationToken);
+        return Ok(fees);
     }
 
     /// <summary>
@@ -89,16 +67,8 @@ public class FeeController : ControllerBase
     [Authorize]
     public async Task<ActionResult<IEnumerable<FeeDto>>> GetFeesByType(FeeType feeType, CancellationToken cancellationToken)
     {
-        try
-        {
-            var fees = await _feeService.GetFeesByTypeAsync(feeType, cancellationToken);
-            return Ok(fees);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error retrieving fees for type: {FeeType}", feeType);
-            return StatusCode(500, new { error = "An error occurred while retrieving fees by type" });
-        }
+        var fees = await _feeService.GetFeesByTypeAsync(feeType, cancellationToken);
+        return Ok(fees);
     }
 
     /// <summary>
@@ -108,16 +78,8 @@ public class FeeController : ControllerBase
     [Authorize]
     public async Task<ActionResult<IEnumerable<FeeDto>>> GetFeesByStatus(FeeStatus status, CancellationToken cancellationToken)
     {
-        try
-        {
-            var fees = await _feeService.GetFeesByStatusAsync(status, cancellationToken);
-            return Ok(fees);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error retrieving fees for status: {Status}", status);
-            return StatusCode(500, new { error = "An error occurred while retrieving fees by status" });
-        }
+        var fees = await _feeService.GetFeesByStatusAsync(status, cancellationToken);
+        return Ok(fees);
     }
 
     /// <summary>
@@ -127,16 +89,8 @@ public class FeeController : ControllerBase
     [Authorize]
     public async Task<ActionResult<IEnumerable<FeeDto>>> GetOverdueFees(CancellationToken cancellationToken)
     {
-        try
-        {
-            var fees = await _feeService.GetOverdueFeesAsync(cancellationToken);
-            return Ok(fees);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error retrieving overdue fees");
-            return StatusCode(500, new { error = "An error occurred while retrieving overdue fees" });
-        }
+        var fees = await _feeService.GetOverdueFeesAsync(cancellationToken);
+        return Ok(fees);
     }
 
     /// <summary>
@@ -146,43 +100,15 @@ public class FeeController : ControllerBase
     [Authorize]
     public async Task<ActionResult<Guid>> CreateFee([FromBody] CreateFeeReq request, CancellationToken cancellationToken)
     {
-        try
+        if (!ModelState.IsValid)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
+            return BadRequest(ModelState);
+        }
 
-            var feeId = await _feeService.CreateFeeAsync(request, cancellationToken);
-            _logger.LogInformation("Fee created with ID: {FeeId} for student: {StudentId}", feeId, request.StudentId);
-            
-            return CreatedAtAction(nameof(GetFeeById), new { id = feeId }, new { id = feeId });
-        }
-        catch (ArgumentException ex)
-        {
-            _logger.LogWarning("Validation error creating fee: {Error}", ex.Message);
-            return BadRequest(new { error = ex.Message });
-        }
-        catch (InvalidOperationException ex)
-        {
-            _logger.LogWarning("Business rule violation creating fee: {Error}", ex.Message);
-            return BadRequest(new { error = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error creating fee for student: {StudentId}", request.StudentId);
-            
-            if (_environment.IsDevelopment() || _environment.IsEnvironment("Testing"))
-            {
-                return StatusCode(500, new { 
-                    error = ex.Message,
-                    details = ex.ToString(),
-                    stackTrace = ex.StackTrace
-                });
-            }
-            
-            return StatusCode(500, new { error = "An error occurred while creating the fee" });
-        }
+        var feeId = await _feeService.CreateFeeAsync(request, cancellationToken);
+        _logger.LogInformation("Fee created with ID: {FeeId} for student: {StudentId}", feeId, request.StudentId);
+        
+        return CreatedAtAction(nameof(GetFeeById), new { id = feeId }, new { id = feeId });
     }
 
     /// <summary>
@@ -192,37 +118,19 @@ public class FeeController : ControllerBase
     [Authorize]
     public async Task<ActionResult> UpdateFee(Guid id, [FromBody] UpdateFeeReq request, CancellationToken cancellationToken)
     {
-        try
+        if (!ModelState.IsValid)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
+            return BadRequest(ModelState);
+        }
 
-            var success = await _feeService.UpdateFeeAsync(id, request, cancellationToken);
-            if (!success)
-            {
-                return NotFound(new { error = "Fee not found" });
-            }
+        var success = await _feeService.UpdateFeeAsync(id, request, cancellationToken);
+        if (!success)
+        {
+            throw new FeeNotFoundException(id);
+        }
 
-            _logger.LogInformation("Fee updated with ID: {FeeId}", id);
-            return NoContent();
-        }
-        catch (ArgumentException ex)
-        {
-            _logger.LogWarning("Validation error updating fee: {Error}", ex.Message);
-            return BadRequest(new { error = ex.Message });
-        }
-        catch (InvalidOperationException ex)
-        {
-            _logger.LogWarning("Business rule violation updating fee: {Error}", ex.Message);
-            return BadRequest(new { error = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error updating fee with ID: {FeeId}", id);
-            return StatusCode(500, new { error = "An error occurred while updating the fee" });
-        }
+        _logger.LogInformation("Fee updated with ID: {FeeId}", id);
+        return NoContent();
     }
 
     /// <summary>
@@ -232,27 +140,14 @@ public class FeeController : ControllerBase
     [Authorize]
     public async Task<ActionResult> DeleteFee(Guid id, CancellationToken cancellationToken)
     {
-        try
+        var success = await _feeService.DeleteFeeAsync(id, cancellationToken);
+        if (!success)
         {
-            var success = await _feeService.DeleteFeeAsync(id, cancellationToken);
-            if (!success)
-            {
-                return NotFound(new { error = "Fee not found" });
-            }
+            throw new FeeNotFoundException(id);
+        }
 
-            _logger.LogInformation("Fee deleted with ID: {FeeId}", id);
-            return NoContent();
-        }
-        catch (InvalidOperationException ex)
-        {
-            _logger.LogWarning("Business rule violation deleting fee: {Error}", ex.Message);
-            return BadRequest(new { error = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error deleting fee with ID: {FeeId}", id);
-            return StatusCode(500, new { error = "An error occurred while deleting the fee" });
-        }
+        _logger.LogInformation("Fee deleted with ID: {FeeId}", id);
+        return NoContent();
     }
 
     /// <summary>
@@ -262,33 +157,15 @@ public class FeeController : ControllerBase
     [Authorize]
     public async Task<ActionResult<PaymentDto>> RecordPayment(Guid id, [FromBody] PaymentReq request, CancellationToken cancellationToken)
     {
-        try
+        if (!ModelState.IsValid)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
+            return BadRequest(ModelState);
+        }
 
-            var payment = await _feeService.RecordPaymentAsync(id, request, cancellationToken);
-            _logger.LogInformation("Payment recorded for fee ID: {FeeId}, Amount: {Amount}", id, request.Amount);
-            
-            return CreatedAtAction(nameof(GetPaymentsByFeeId), new { id }, payment);
-        }
-        catch (ArgumentException ex)
-        {
-            _logger.LogWarning("Validation error recording payment: {Error}", ex.Message);
-            return BadRequest(new { error = ex.Message });
-        }
-        catch (InvalidOperationException ex)
-        {
-            _logger.LogWarning("Business rule violation recording payment: {Error}", ex.Message);
-            return BadRequest(new { error = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error recording payment for fee ID: {FeeId}", id);
-            return StatusCode(500, new { error = "An error occurred while recording the payment" });
-        }
+        var payment = await _feeService.RecordPaymentAsync(id, request, cancellationToken);
+        _logger.LogInformation("Payment recorded for fee ID: {FeeId}, Amount: {Amount}", id, request.Amount);
+        
+        return CreatedAtAction(nameof(GetPaymentsByFeeId), new { id }, payment);
     }
 
     /// <summary>
@@ -298,16 +175,8 @@ public class FeeController : ControllerBase
     [Authorize]
     public async Task<ActionResult<IEnumerable<PaymentDto>>> GetPaymentsByFeeId(Guid id, CancellationToken cancellationToken)
     {
-        try
-        {
-            var payments = await _feeService.GetPaymentsByFeeIdAsync(id, cancellationToken);
-            return Ok(payments);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error retrieving payments for fee ID: {FeeId}", id);
-            return StatusCode(500, new { error = "An error occurred while retrieving payments" });
-        }
+        var payments = await _feeService.GetPaymentsByFeeIdAsync(id, cancellationToken);
+        return Ok(payments);
     }
 
     /// <summary>
@@ -317,16 +186,8 @@ public class FeeController : ControllerBase
     [Authorize]
     public async Task<ActionResult<FeesSummaryDto>> GetStudentFeesSummary(Guid studentId, CancellationToken cancellationToken)
     {
-        try
-        {
-            var summary = await _feeService.GetStudentFeesSummaryAsync(studentId, cancellationToken);
-            return Ok(summary);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error retrieving fee summary for student ID: {StudentId}", studentId);
-            return StatusCode(500, new { error = "An error occurred while retrieving the fee summary" });
-        }
+        var summary = await _feeService.GetStudentFeesSummaryAsync(studentId, cancellationToken);
+        return Ok(summary);
     }
 
     /// <summary>
@@ -336,16 +197,8 @@ public class FeeController : ControllerBase
     [Authorize]
     public async Task<ActionResult<IEnumerable<PaymentDto>>> GetPaymentsByStudentId(Guid studentId, CancellationToken cancellationToken)
     {
-        try
-        {
-            var payments = await _feeService.GetPaymentsByStudentIdAsync(studentId, cancellationToken);
-            return Ok(payments);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error retrieving payments for student ID: {StudentId}", studentId);
-            return StatusCode(500, new { error = "An error occurred while retrieving student payments" });
-        }
+        var payments = await _feeService.GetPaymentsByStudentIdAsync(studentId, cancellationToken);
+        return Ok(payments);
     }
 
     /// <summary>
@@ -355,27 +208,14 @@ public class FeeController : ControllerBase
     [Authorize]
     public async Task<ActionResult> MarkFeeAsPaid(Guid id, CancellationToken cancellationToken)
     {
-        try
+        var success = await _feeService.MarkFeeAsPaidAsync(id, cancellationToken);
+        if (!success)
         {
-            var success = await _feeService.MarkFeeAsPaidAsync(id, cancellationToken);
-            if (!success)
-            {
-                return NotFound(new { error = "Fee not found" });
-            }
+            throw new FeeNotFoundException(id);
+        }
 
-            _logger.LogInformation("Fee marked as paid with ID: {FeeId}", id);
-            return NoContent();
-        }
-        catch (InvalidOperationException ex)
-        {
-            _logger.LogWarning("Business rule violation marking fee as paid: {Error}", ex.Message);
-            return BadRequest(new { error = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error marking fee as paid with ID: {FeeId}", id);
-            return StatusCode(500, new { error = "An error occurred while marking the fee as paid" });
-        }
+        _logger.LogInformation("Fee marked as paid with ID: {FeeId}", id);
+        return NoContent();
     }
 
     /// <summary>
@@ -385,16 +225,8 @@ public class FeeController : ControllerBase
     [Authorize]
     public async Task<ActionResult> UpdateFeeStatuses(CancellationToken cancellationToken)
     {
-        try
-        {
-            await _feeService.UpdateFeeStatusesAsync(cancellationToken);
-            _logger.LogInformation("Fee statuses updated successfully");
-            return NoContent();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error updating fee statuses");
-            return StatusCode(500, new { error = "An error occurred while updating fee statuses" });
-        }
+        await _feeService.UpdateFeeStatusesAsync(cancellationToken);
+        _logger.LogInformation("Fee statuses updated successfully");
+        return NoContent();
     }
 }

@@ -15,6 +15,9 @@ public class EduShieldDbContext : DbContext
     public DbSet<Performance> Performances => Set<Performance>();
     public DbSet<Fee> Fees => Set<Fee>();
     public DbSet<Payment> Payments => Set<Payment>();
+    public DbSet<User> Users => Set<User>();
+    public DbSet<UserSession> UserSessions => Set<UserSession>();
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -150,6 +153,102 @@ public class EduShieldDbContext : DbContext
                   .HasDatabaseName("IX_Payment_Fee");
             entity.HasIndex(e => e.PaymentDate)
                   .HasDatabaseName("IX_Payment_Date");
+        });
+
+        // Configure User entity
+        modelBuilder.Entity<User>(entity =>
+        {
+            entity.ToTable("Users");
+            entity.HasKey(e => e.UserId);
+            entity.Property(e => e.Email).IsRequired().HasMaxLength(255);
+            entity.Property(e => e.FirstName).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.LastName).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.ExternalId).IsRequired().HasMaxLength(255);
+            entity.Property(e => e.Provider).IsRequired();
+            entity.Property(e => e.Role).IsRequired();
+            entity.Property(e => e.IsActive).IsRequired();
+            entity.Property(e => e.ProfilePictureUrl).HasMaxLength(500);
+
+            // Ignore computed properties
+            entity.Ignore(e => e.FullName);
+
+            // Configure indexes
+            entity.HasIndex(e => e.Email).IsUnique();
+            entity.HasIndex(e => new { e.ExternalId, e.Provider }).IsUnique();
+            entity.HasIndex(e => e.Role);
+
+            // Configure relationships
+            entity.HasMany(e => e.Sessions)
+                  .WithOne(s => s.User)
+                  .HasForeignKey(s => s.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasMany(e => e.AuditLogs)
+                  .WithOne(a => a.User)
+                  .HasForeignKey(a => a.UserId)
+                  .IsRequired(false)
+                  .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // Configure UserSession entity
+        modelBuilder.Entity<UserSession>(entity =>
+        {
+            entity.ToTable("UserSessions");
+            entity.HasKey(e => e.SessionId);
+            entity.Property(e => e.SessionToken).IsRequired().HasMaxLength(500);
+            entity.Property(e => e.ExpiresAt).IsRequired();
+            entity.Property(e => e.IpAddress).IsRequired().HasMaxLength(45);
+            entity.Property(e => e.UserAgent).IsRequired().HasMaxLength(500);
+            entity.Property(e => e.IsActive).IsRequired();
+
+            // Ignore computed properties
+            entity.Ignore(e => e.IsExpired);
+            entity.Ignore(e => e.IsValid);
+
+            // Configure indexes
+            entity.HasIndex(e => e.SessionToken).IsUnique();
+            entity.HasIndex(e => e.UserId);
+            entity.HasIndex(e => e.ExpiresAt);
+        });
+
+        // Configure AuditLog entity
+        modelBuilder.Entity<AuditLog>(entity =>
+        {
+            entity.ToTable("AuditLogs");
+            entity.HasKey(e => e.AuditId);
+            entity.Property(e => e.Action).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Resource).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.IpAddress).IsRequired().HasMaxLength(45);
+            entity.Property(e => e.UserAgent).IsRequired().HasMaxLength(500);
+            entity.Property(e => e.Success).IsRequired();
+            entity.Property(e => e.ErrorMessage).HasMaxLength(1000);
+            entity.Property(e => e.AdditionalData).HasColumnType("text");
+
+            // Configure indexes
+            entity.HasIndex(e => e.UserId);
+            entity.HasIndex(e => e.Action);
+            entity.HasIndex(e => e.CreatedAt);
+            entity.HasIndex(e => new { e.Success, e.CreatedAt });
+        });
+
+        // Update Student entity to include User relationship
+        modelBuilder.Entity<Student>(entity =>
+        {
+            entity.HasOne(e => e.User)
+                  .WithMany()
+                  .HasForeignKey(e => e.UserId)
+                  .IsRequired(false)
+                  .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // Update Faculty entity to include User relationship
+        modelBuilder.Entity<Faculty>(entity =>
+        {
+            entity.HasOne(e => e.User)
+                  .WithMany()
+                  .HasForeignKey(e => e.UserId)
+                  .IsRequired(false)
+                  .OnDelete(DeleteBehavior.SetNull);
         });
     }
 

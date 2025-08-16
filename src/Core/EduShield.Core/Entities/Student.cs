@@ -21,4 +21,8 @@ public class Student : AuditableEntity
     public ICollection<Fee> Fees { get; set; } = [];
     public Faculty? Faculty { get; set; }
     public Guid? FacultyId { get; set; }
+    
+    // Authentication relationship
+    public User? User { get; set; }
+    public Guid? UserId { get; set; }
 }

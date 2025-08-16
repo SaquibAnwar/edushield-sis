@@ -5,6 +5,7 @@ using EduShield.Core.Entities;
 using EduShield.Core.Enums;
 using EduShield.Core.Interfaces;
 using EduShield.Core.Validators;
+using EduShield.Core.Exceptions;
 
 namespace EduShield.Api.Services;
 
@@ -52,7 +53,7 @@ public class FeeService : IFeeService
         var student = await _studentRepo.GetByIdAsync(request.StudentId, cancellationToken);
         if (student == null)
         {
-            throw new ArgumentException($"Student with ID {request.StudentId} not found");
+            throw new StudentNotFoundException(request.StudentId);
         }
 
         // Create fee entity
@@ -146,7 +147,10 @@ public class FeeService : IFeeService
         var payments = await _feeRepo.GetPaymentsByFeeIdAsync(feeId, cancellationToken);
         if (payments.Any())
         {
-            throw new InvalidOperationException("Cannot delete a fee that has associated payments");
+            throw new FeeBusinessRuleException(
+                "FeeWithPaymentsCannotBeDeleted", 
+                "Cannot delete a fee that has associated payments", 
+                feeId);
         }
 
         return await _feeRepo.DeleteAsync(feeId, cancellationToken);
@@ -189,7 +193,7 @@ public class FeeService : IFeeService
         var fee = await _feeRepo.GetByIdAsync(feeId, cancellationToken);
         if (fee == null)
         {
-            throw new ArgumentException($"Fee with ID {feeId} not found");
+            throw new FeeNotFoundException(feeId);
         }
 
         // Business validation
@@ -248,7 +252,7 @@ public class FeeService : IFeeService
         var student = await _studentRepo.GetByIdAsync(studentId, cancellationToken);
         if (student == null)
         {
-            throw new ArgumentException($"Student with ID {studentId} not found");
+            throw new StudentNotFoundException(studentId);
         }
 
         // Get all fees for student

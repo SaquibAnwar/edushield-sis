@@ -362,3 +362,6 @@ FodyWeavers.xsd
 # JetBrains Rider
 *.sln.iml
 .idea/
+# OAuth secrets and sensitive configuration
+appsettings.Secrets.json
+**/appsettings.Secrets.json

@@ -20,6 +20,10 @@ using OpenTelemetry.Metrics;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Add secrets configuration file
+builder.Configuration.AddJsonFile("appsettings.Secrets.json", optional: true, reloadOnChange: true);
+
 builder.Host.UseSerilog((ctx, services, lc) => lc
     .ReadFrom.Configuration(ctx.Configuration)
     .Enrich.FromLogContext()
@@ -52,7 +56,7 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 // Add AutoMapper
-builder.Services.AddAutoMapper(typeof(StudentMappingProfile), typeof(FacultyMappingProfile), typeof(PerformanceMappingProfile), typeof(FeeMappingProfile), typeof(PaymentMappingProfile));
+builder.Services.AddAutoMapper(typeof(StudentMappingProfile), typeof(FacultyMappingProfile), typeof(PerformanceMappingProfile), typeof(FeeMappingProfile), typeof(PaymentMappingProfile), typeof(UserMappingProfile));
 
 // Add FluentValidation
 builder.Services.AddFluentValidationAutoValidation()
@@ -77,16 +81,40 @@ builder.Services.AddScoped<IStudentRepo, StudentRepo>();
 builder.Services.AddScoped<IFacultyRepo, FacultyRepo>();
 builder.Services.AddScoped<IPerformanceRepo, PerformanceRepo>();
 builder.Services.AddScoped<IFeeRepo, FeeRepo>();
+builder.Services.AddScoped<IUserRepo, UserRepo>();
+builder.Services.AddScoped<ISessionRepo, SessionRepo>();
+builder.Services.AddScoped<IAuditRepo, AuditRepo>();
 
 // Add Services
 builder.Services.AddScoped<IStudentService, StudentService>();
 builder.Services.AddScoped<IFacultyService, FacultyService>();
 builder.Services.AddScoped<IPerformanceService, PerformanceService>();
 builder.Services.AddScoped<IFeeService, FeeService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<ISessionService, SessionService>();
+builder.Services.AddScoped<IAuditService, AuditService>();
+
+// Add Authentication Configuration
+builder.Services.Configure<EduShield.Core.Configuration.AuthenticationConfiguration>(
+    builder.Configuration.GetSection("Authentication"));
+
+// Add Authentication Services
+builder.Services.AddScoped<AuthCallbackHandler>();
+builder.Services.AddHostedService<SessionCleanupService>();
 
 // Add Authentication
-builder.Services.AddAuthentication("DevAuth")
-    .AddScheme<AuthenticationSchemeOptions, DevAuthHandler>("DevAuth", options => { });
+var useDevAuth = builder.Configuration.GetValue<bool>("Auth:UseDevAuth");
+if (useDevAuth)
+{
+    builder.Services.AddAuthentication("DevAuth")
+        .AddScheme<AuthenticationSchemeOptions, DevAuthHandler>("DevAuth", options => { });
+}
+else
+{
+    builder.Services.AddAuthentication("ProductionAuth")
+        .AddScheme<AuthenticationSchemeOptions, ProductionAuthHandler>("ProductionAuth", options => { });
+}
 
 // Add Authorization
 builder.Services.AddAuthorization();

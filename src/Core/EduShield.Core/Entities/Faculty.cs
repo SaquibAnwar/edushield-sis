@@ -26,4 +26,8 @@ public class Faculty : AuditableEntity
     
     // Navigation property to Students
     public ICollection<Student> Students { get; init; } = [];
+    
+    // Authentication relationship
+    public User? User { get; set; }
+    public Guid? UserId { get; set; }
 }

@@ -23,7 +23,38 @@ A modern .NET 8 Student Information System built with Entity Framework Core, Pos
 
 ## Quick Start
 
-### 1. Start the Database
+### 1. Setup OAuth Credentials (Required for Google Authentication)
+
+**Quick Setup (Recommended):**
+```bash
+# Run the setup script (Linux/Mac)
+./setup-oauth.sh
+
+# Or on Windows
+setup-oauth.bat
+```
+
+**Manual Setup:**
+```bash
+# Copy the secrets template
+cp src/Api/EduShield.Api/appsettings.Secrets.template.json src/Api/EduShield.Api/appsettings.Secrets.json
+
+# Edit the secrets file with your Google OAuth credentials
+# Get these from Google Cloud Console > APIs & Services > Credentials
+```
+
+**Important**: The `appsettings.Secrets.json` file is gitignored and should never be committed to version control.
+
+#### Google OAuth Setup:
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project or select existing one
+3. Enable Google+ API
+4. Go to "APIs & Services" > "Credentials"
+5. Create OAuth 2.0 Client ID
+6. Add `http://localhost:5000/api/v1/auth/callback/google` to authorized redirect URIs
+7. Copy Client ID and Client Secret to your `appsettings.Secrets.json`
+
+### 2. Start the Database
 
 ```bash
 # Start PostgreSQL using Docker Compose
@@ -33,7 +64,7 @@ docker-compose up -d postgres
 docker-compose ps
 ```
 
-### 2. Run Database Migrations
+### 3. Run Database Migrations
 
 ```bash
 # Navigate to the API project
@@ -43,7 +74,7 @@ cd src/Api/EduShield.Api
 dotnet ef database update
 ```
 
-### 3. Run the Application
+### 4. Run the Application
 
 ```bash
 # From the API project directory
@@ -54,11 +85,12 @@ dotnet run --project src/Api/EduShield.Api
 ```
 
 The API will be available at:
-- **API**: https://localhost:7001 (or http://localhost:5001)
-- **Swagger UI**: https://localhost:7001/swagger
-- **Health Check**: https://localhost:7001/healthz
+- **API**: http://localhost:5000
+- **Swagger UI**: http://localhost:5000/swagger
+- **Health Check**: http://localhost:5000/api/v1/health/live
+- **Google OAuth Login**: http://localhost:5000/api/v1/auth/login/google
 
-### 4. Test the API
+### 5. Test the API
 
 The application uses development authentication in development mode, so you can test the endpoints without providing JWT tokens.
 

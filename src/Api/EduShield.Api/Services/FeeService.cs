@@ -143,16 +143,7 @@ public class FeeService : IFeeService
             return false;
         }
 
-        // Check if fee has payments - prevent deletion if it does
-        var payments = await _feeRepo.GetPaymentsByFeeIdAsync(feeId, cancellationToken);
-        if (payments.Any())
-        {
-            throw new FeeBusinessRuleException(
-                "FeeWithPaymentsCannotBeDeleted", 
-                "Cannot delete a fee that has associated payments", 
-                feeId);
-        }
-
+        // Delete the fee - cascade deletion will handle associated payments
         return await _feeRepo.DeleteAsync(feeId, cancellationToken);
     }
 
@@ -236,6 +227,13 @@ public class FeeService : IFeeService
 
     public async Task<IEnumerable<PaymentDto>> GetPaymentsByFeeIdAsync(Guid feeId, CancellationToken cancellationToken = default)
     {
+        // Check if fee exists first
+        var feeExists = await _feeRepo.ExistsAsync(feeId, cancellationToken);
+        if (!feeExists)
+        {
+            throw new FeeNotFoundException(feeId);
+        }
+
         var payments = await _feeRepo.GetPaymentsByFeeIdAsync(feeId, cancellationToken);
         return _mapper.Map<IEnumerable<PaymentDto>>(payments);
     }

@@ -27,9 +27,12 @@ public class TestAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions
 
         var claims = new[]
         {
-            new Claim(ClaimTypes.Name, "test-user"),
+            new Claim(ClaimTypes.NameIdentifier, "12345678-1234-1234-1234-123456789012"),
+            new Claim(ClaimTypes.Name, "Test User"),
+            new Claim(ClaimTypes.Email, "test@edushield.local"),
             new Claim(ClaimTypes.Role, "SchoolAdmin"),
-            new Claim("sub", "test-user-id")
+            new Claim("role", "SchoolAdmin"),
+            new Claim("sub", "12345678-1234-1234-1234-123456789012")
         };
 
         var identity = new ClaimsIdentity(claims, Scheme.Name);

@@ -83,6 +83,11 @@ public class AuditService : IAuditService
             .Take(take);
     }
 
+    public async Task LogSecurityEventAsync(string eventType, string description, Guid? userId = null, string? ipAddress = null, string? userAgent = null, CancellationToken cancellationToken = default)
+    {
+        await LogAsync($"Security_{eventType}", description, userId, true, null, null, ipAddress, userAgent, cancellationToken);
+    }
+
     public async Task CleanupOldLogsAsync(TimeSpan retentionPeriod, CancellationToken cancellationToken = default)
     {
         try
@@ -96,5 +101,20 @@ public class AuditService : IAuditService
         {
             _logger.LogError(ex, "Error during audit log cleanup");
         }
+    }
+
+    public async Task<IEnumerable<AuditLog>> GetAuditLogsByActionAsync(string action, CancellationToken cancellationToken = default)
+    {
+        return await _auditRepo.GetByActionAsync(action, cancellationToken);
+    }
+
+    public async Task<IEnumerable<AuditLog>> GetAuditLogsByDateRangeAsync(DateTime fromDate, DateTime toDate, CancellationToken cancellationToken = default)
+    {
+        return await _auditRepo.GetByDateRangeAsync(fromDate, toDate, cancellationToken);
+    }
+
+    public async Task<IEnumerable<AuditLog>> GetUserAuditLogsAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        return await _auditRepo.GetLogsAsync(userId, null, null, null, 0, 1000, cancellationToken);
     }
 }

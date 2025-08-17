@@ -1,4 +1,6 @@
+using AutoMapper;
 using EduShield.Core.Configuration;
+using EduShield.Core.Dtos;
 using EduShield.Core.Entities;
 using EduShield.Core.Interfaces;
 using Microsoft.Extensions.Options;
@@ -9,15 +11,18 @@ namespace EduShield.Api.Services;
 public class SessionService : ISessionService
 {
     private readonly ISessionRepo _sessionRepo;
+    private readonly IMapper _mapper;
     private readonly AuthenticationConfiguration _authConfig;
     private readonly ILogger<SessionService> _logger;
 
     public SessionService(
         ISessionRepo sessionRepo,
+        IMapper mapper,
         IOptions<AuthenticationConfiguration> authConfig,
         ILogger<SessionService> logger)
     {
         _sessionRepo = sessionRepo;
+        _mapper = mapper;
         _authConfig = authConfig.Value;
         _logger = logger;
     }
@@ -27,7 +32,7 @@ public class SessionService : ISessionService
         // Invalidate existing sessions if multiple sessions not allowed
         if (!_authConfig.AllowMultipleSessions)
         {
-            await InvalidateAllUserSessionsAsync(userId, cancellationToken);
+            await InvalidateUserSessionsAsync(userId, cancellationToken);
         }
 
         var sessionTimeout = customTimeout ?? _authConfig.SessionTimeout;
@@ -58,17 +63,19 @@ public class SessionService : ISessionService
         return session?.IsValid == true;
     }
 
-    public async Task InvalidateSessionAsync(string sessionToken, CancellationToken cancellationToken = default)
+    public async Task<bool> InvalidateSessionAsync(string sessionToken, CancellationToken cancellationToken = default)
     {
         var session = await _sessionRepo.GetByTokenAsync(sessionToken, cancellationToken);
         if (session != null)
         {
             session.IsActive = false;
             await _sessionRepo.UpdateAsync(session, cancellationToken);
+            return true;
         }
+        return false;
     }
 
-    public async Task InvalidateAllUserSessionsAsync(Guid userId, CancellationToken cancellationToken = default)
+    public async Task InvalidateUserSessionsAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         var sessions = await _sessionRepo.GetByUserIdAsync(userId, activeOnly: true, cancellationToken);
         foreach (var session in sessions)
@@ -78,9 +85,10 @@ public class SessionService : ISessionService
         }
     }
 
-    public async Task<IEnumerable<UserSession>> GetUserSessionsAsync(Guid userId, bool activeOnly = true, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<UserSessionDto>> GetUserSessionsAsync(Guid userId, bool activeOnly = true, CancellationToken cancellationToken = default)
     {
-        return await _sessionRepo.GetByUserIdAsync(userId, activeOnly, cancellationToken);
+        var sessions = await _sessionRepo.GetByUserIdAsync(userId, activeOnly, cancellationToken);
+        return _mapper.Map<IEnumerable<UserSessionDto>>(sessions);
     }
 
     public async Task CleanupExpiredSessionsAsync(CancellationToken cancellationToken = default)
@@ -110,6 +118,16 @@ public class SessionService : ISessionService
             session.ExpiresAt = session.ExpiresAt.Add(extension);
             await _sessionRepo.UpdateAsync(session, cancellationToken);
         }
+    }
+
+    public async Task<IEnumerable<UserSessionDto>> GetActiveSessionsAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        return await GetUserSessionsAsync(userId, true, cancellationToken);
+    }
+
+    public async Task InvalidateAllUserSessionsAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        await InvalidateUserSessionsAsync(userId, cancellationToken);
     }
 
     private static string GenerateSecureToken()

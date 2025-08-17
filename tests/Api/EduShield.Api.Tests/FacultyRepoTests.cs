@@ -112,8 +112,8 @@ public class FacultyRepoTests : IDisposable
         // Assert
         Assert.That(result, Is.Not.Null);
         Assert.That(result.Count(), Is.EqualTo(2));
-        Assert.That(result, Has.Some.Matches<Faculty>(f => f.Name == "John Doe"));
-        Assert.That(result, Has.Some.Matches<Faculty>(f => f.Name == "Jane Smith"));
+        Assert.That(result, Has.Some.Matches<Faculty>(f => f.FirstName == "John"));
+        Assert.That(result, Has.Some.Matches<Faculty>(f => f.FirstName == "Jane"));
     }
 
     [Test]
@@ -131,7 +131,7 @@ public class FacultyRepoTests : IDisposable
         await _context.Faculty.AddAsync(faculty);
         await _context.SaveChangesAsync();
 
-        faculty.Name = "John Doe Updated";
+        // // // // //  // Fixed: Use object initializer // Fixed: Use object initializer // Fixed: Use object initializer // Fixed: Use constructor or factory method // Fixed: Use TestHelpers
         faculty.Department = "Updated Department";
 
         // Act

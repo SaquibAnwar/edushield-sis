@@ -187,4 +187,5 @@ public class FeeExceptionTests
         Assert.That(exception.ValidationErrors, Is.Not.Null);
         Assert.That(exception.ValidationErrors, Is.Empty);
     }
+
 }

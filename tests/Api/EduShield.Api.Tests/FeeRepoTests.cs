@@ -73,18 +73,15 @@ public class FeeRepoTests
     {
         // Arrange
         var fee = new Fee
-        {
-            FeeId = Guid.NewGuid(),
-            StudentId = _testStudent.Id,
-            FeeType = FeeType.Tuition,
-            Amount = 1000.00m,
-            PaidAmount = 0m,
-            DueDate = DateTime.UtcNow.AddDays(30),
-            Description = "Semester Tuition Fee",
-            Status = FeeStatus.Pending,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
+            {
+                FeeId = Guid.NewGuid(),
+                StudentId = Guid.NewGuid(),
+                Amount = 100.00m,
+                FeeType = FeeType.Tuition,
+                Description = "Test Fee",
+                DueDate = DateTime.UtcNow.AddDays(30),
+                CreatedAt = DateTime.UtcNow
+            };
 
         // Act
         var result = await _repo.CreateAsync(fee);
@@ -112,18 +109,15 @@ public class FeeRepoTests
     {
         // Arrange
         var fee = new Fee
-        {
-            FeeId = Guid.NewGuid(),
-            StudentId = _testStudent.Id,
-            FeeType = FeeType.LabFee,
-            Amount = 500.00m,
-            PaidAmount = 200.00m,
-            DueDate = DateTime.UtcNow.AddDays(15),
-            Description = "Lab Equipment Fee",
-            Status = FeeStatus.PartiallyPaid,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
+            {
+                FeeId = Guid.NewGuid(),
+                StudentId = Guid.NewGuid(),
+                Amount = 100.00m,
+                FeeType = FeeType.Tuition,
+                Description = "Test Fee",
+                DueDate = DateTime.UtcNow.AddDays(30),
+                CreatedAt = DateTime.UtcNow
+            };
         await _repo.CreateAsync(fee);
 
         // Act
@@ -153,30 +147,26 @@ public class FeeRepoTests
     {
         // Arrange
         var fee1 = new Fee
-        {
-            FeeId = Guid.NewGuid(),
-            StudentId = _testStudent.Id,
-            FeeType = FeeType.Tuition,
-            Amount = 1000.00m,
-            PaidAmount = 0m,
-            DueDate = DateTime.UtcNow.AddDays(30),
-            Description = "Tuition Fee",
-            Status = FeeStatus.Pending
-        };
+            {
+                FeeId = Guid.NewGuid(),
+                StudentId = Guid.NewGuid(),
+                Amount = 100.00m,
+                FeeType = FeeType.Tuition,
+                Description = "Test Fee",
+                DueDate = DateTime.UtcNow.AddDays(30),
+                CreatedAt = DateTime.UtcNow
+            };
 
         var fee2 = new Fee
-        {
-            FeeId = Guid.NewGuid(),
-            StudentId = _otherStudent.Id,
-            FeeType = FeeType.LibraryFee,
-            Amount = 100.00m,
-            PaidAmount = 100.00m,
-            DueDate = DateTime.UtcNow.AddDays(20),
-            Description = "Library Fee",
-            Status = FeeStatus.Paid,
-            IsPaid = true,
-            PaidDate = DateTime.UtcNow
-        };
+            {
+                FeeId = Guid.NewGuid(),
+                StudentId = Guid.NewGuid(),
+                Amount = 100.00m,
+                FeeType = FeeType.Tuition,
+                Description = "Test Fee",
+                DueDate = DateTime.UtcNow.AddDays(30),
+                CreatedAt = DateTime.UtcNow
+            };
 
         await _repo.CreateAsync(fee1);
         await _repo.CreateAsync(fee2);
@@ -195,16 +185,15 @@ public class FeeRepoTests
     {
         // Arrange
         var fee = new Fee
-        {
-            FeeId = Guid.NewGuid(),
-            StudentId = _testStudent.Id,
-            FeeType = FeeType.ActivityFee,
-            Amount = 200.00m,
-            PaidAmount = 0m,
-            DueDate = DateTime.UtcNow.AddDays(10),
-            Description = "Activity Fee",
-            Status = FeeStatus.Pending
-        };
+            {
+                FeeId = Guid.NewGuid(),
+                StudentId = Guid.NewGuid(),
+                Amount = 100.00m,
+                FeeType = FeeType.Tuition,
+                Description = "Test Fee",
+                DueDate = DateTime.UtcNow.AddDays(30),
+                CreatedAt = DateTime.UtcNow
+            };
         await _repo.CreateAsync(fee);
 
         // Modify the fee
@@ -233,16 +222,15 @@ public class FeeRepoTests
     {
         // Arrange
         var fee = new Fee
-        {
-            FeeId = Guid.NewGuid(),
-            StudentId = _testStudent.Id,
-            FeeType = FeeType.Other,
-            Amount = 150.00m,
-            PaidAmount = 0m,
-            DueDate = DateTime.UtcNow.AddDays(5),
-            Description = "Miscellaneous Fee",
-            Status = FeeStatus.Pending
-        };
+            {
+                FeeId = Guid.NewGuid(),
+                StudentId = Guid.NewGuid(),
+                Amount = 100.00m,
+                FeeType = FeeType.Tuition,
+                Description = "Test Fee",
+                DueDate = DateTime.UtcNow.AddDays(30),
+                CreatedAt = DateTime.UtcNow
+            };
         await _repo.CreateAsync(fee);
 
         // Act
@@ -273,40 +261,37 @@ public class FeeRepoTests
     {
         // Arrange
         var fee1 = new Fee
-        {
-            FeeId = Guid.NewGuid(),
-            StudentId = _testStudent.Id,
-            FeeType = FeeType.Tuition,
-            Amount = 1000.00m,
-            PaidAmount = 0m,
-            DueDate = DateTime.UtcNow.AddDays(30), // Later due date
-            Description = "Tuition Fee",
-            Status = FeeStatus.Pending
-        };
+            {
+                FeeId = Guid.NewGuid(),
+                StudentId = Guid.NewGuid(),
+                Amount = 100.00m,
+                FeeType = FeeType.Tuition,
+                Description = "Test Fee",
+                DueDate = DateTime.UtcNow.AddDays(30),
+                CreatedAt = DateTime.UtcNow
+            };
 
         var fee2 = new Fee
-        {
-            FeeId = Guid.NewGuid(),
-            StudentId = _testStudent.Id,
-            FeeType = FeeType.LabFee,
-            Amount = 200.00m,
-            PaidAmount = 0m,
-            DueDate = DateTime.UtcNow.AddDays(10), // Earlier due date
-            Description = "Lab Fee",
-            Status = FeeStatus.Pending
-        };
+            {
+                FeeId = Guid.NewGuid(),
+                StudentId = Guid.NewGuid(),
+                Amount = 100.00m,
+                FeeType = FeeType.Tuition,
+                Description = "Test Fee",
+                DueDate = DateTime.UtcNow.AddDays(30),
+                CreatedAt = DateTime.UtcNow
+            };
 
         var otherStudentFee = new Fee
-        {
-            FeeId = Guid.NewGuid(),
-            StudentId = _otherStudent.Id,
-            FeeType = FeeType.LibraryFee,
-            Amount = 100.00m,
-            PaidAmount = 0m,
-            DueDate = DateTime.UtcNow.AddDays(20),
-            Description = "Library Fee",
-            Status = FeeStatus.Pending
-        };
+            {
+                FeeId = Guid.NewGuid(),
+                StudentId = Guid.NewGuid(),
+                Amount = 100.00m,
+                FeeType = FeeType.Tuition,
+                Description = "Test Fee",
+                DueDate = DateTime.UtcNow.AddDays(30),
+                CreatedAt = DateTime.UtcNow
+            };
 
         await _repo.CreateAsync(fee1);
         await _repo.CreateAsync(fee2);
@@ -330,40 +315,37 @@ public class FeeRepoTests
     {
         // Arrange
         var tuitionFee1 = new Fee
-        {
-            FeeId = Guid.NewGuid(),
-            StudentId = _testStudent.Id,
-            FeeType = FeeType.Tuition,
-            Amount = 1000.00m,
-            PaidAmount = 0m,
-            DueDate = DateTime.UtcNow.AddDays(30),
-            Description = "Semester 1 Tuition",
-            Status = FeeStatus.Pending
-        };
+            {
+                FeeId = Guid.NewGuid(),
+                StudentId = Guid.NewGuid(),
+                Amount = 100.00m,
+                FeeType = FeeType.Tuition,
+                Description = "Test Fee",
+                DueDate = DateTime.UtcNow.AddDays(30),
+                CreatedAt = DateTime.UtcNow
+            };
 
         var tuitionFee2 = new Fee
-        {
-            FeeId = Guid.NewGuid(),
-            StudentId = _otherStudent.Id,
-            FeeType = FeeType.Tuition,
-            Amount = 1000.00m,
-            PaidAmount = 0m,
-            DueDate = DateTime.UtcNow.AddDays(15),
-            Description = "Semester 1 Tuition",
-            Status = FeeStatus.Pending
-        };
+            {
+                FeeId = Guid.NewGuid(),
+                StudentId = Guid.NewGuid(),
+                Amount = 100.00m,
+                FeeType = FeeType.Tuition,
+                Description = "Test Fee",
+                DueDate = DateTime.UtcNow.AddDays(30),
+                CreatedAt = DateTime.UtcNow
+            };
 
         var labFee = new Fee
-        {
-            FeeId = Guid.NewGuid(),
-            StudentId = _testStudent.Id,
-            FeeType = FeeType.LabFee,
-            Amount = 200.00m,
-            PaidAmount = 0m,
-            DueDate = DateTime.UtcNow.AddDays(20),
-            Description = "Lab Fee",
-            Status = FeeStatus.Pending
-        };
+            {
+                FeeId = Guid.NewGuid(),
+                StudentId = Guid.NewGuid(),
+                Amount = 100.00m,
+                FeeType = FeeType.Tuition,
+                Description = "Test Fee",
+                DueDate = DateTime.UtcNow.AddDays(30),
+                CreatedAt = DateTime.UtcNow
+            };
 
         await _repo.CreateAsync(tuitionFee1);
         await _repo.CreateAsync(tuitionFee2);
@@ -387,53 +369,48 @@ public class FeeRepoTests
     {
         // Arrange
         var overdueFee1 = new Fee
-        {
-            FeeId = Guid.NewGuid(),
-            StudentId = _testStudent.Id,
-            FeeType = FeeType.Tuition,
-            Amount = 1000.00m,
-            PaidAmount = 500.00m, // Partially paid but still overdue
-            DueDate = DateTime.UtcNow.AddDays(-10), // 10 days overdue
-            Description = "Overdue Tuition",
-            Status = FeeStatus.PartiallyPaid
-        };
+            {
+                FeeId = Guid.NewGuid(),
+                StudentId = Guid.NewGuid(),
+                Amount = 100.00m,
+                FeeType = FeeType.Tuition,
+                Description = "Test Fee",
+                DueDate = DateTime.UtcNow.AddDays(30),
+                CreatedAt = DateTime.UtcNow
+            };
 
         var overdueFee2 = new Fee
-        {
-            FeeId = Guid.NewGuid(),
-            StudentId = _otherStudent.Id,
-            FeeType = FeeType.LabFee,
-            Amount = 200.00m,
-            PaidAmount = 0m, // Unpaid and overdue
-            DueDate = DateTime.UtcNow.AddDays(-5), // 5 days overdue
-            Description = "Overdue Lab Fee",
-            Status = FeeStatus.Overdue
-        };
+            {
+                FeeId = Guid.NewGuid(),
+                StudentId = Guid.NewGuid(),
+                Amount = 100.00m,
+                FeeType = FeeType.Tuition,
+                Description = "Test Fee",
+                DueDate = DateTime.UtcNow.AddDays(30),
+                CreatedAt = DateTime.UtcNow
+            };
 
         var paidFee = new Fee
-        {
-            FeeId = Guid.NewGuid(),
-            StudentId = _testStudent.Id,
-            FeeType = FeeType.LibraryFee,
-            Amount = 100.00m,
-            PaidAmount = 100.00m, // Fully paid, not overdue
-            DueDate = DateTime.UtcNow.AddDays(-3),
-            Description = "Paid Library Fee",
-            Status = FeeStatus.Paid,
-            IsPaid = true
-        };
+            {
+                FeeId = Guid.NewGuid(),
+                StudentId = Guid.NewGuid(),
+                Amount = 100.00m,
+                FeeType = FeeType.Tuition,
+                Description = "Test Fee",
+                DueDate = DateTime.UtcNow.AddDays(30),
+                CreatedAt = DateTime.UtcNow
+            };
 
         var futureFee = new Fee
-        {
-            FeeId = Guid.NewGuid(),
-            StudentId = _testStudent.Id,
-            FeeType = FeeType.ActivityFee,
-            Amount = 150.00m,
-            PaidAmount = 0m, // Unpaid but not overdue
-            DueDate = DateTime.UtcNow.AddDays(10),
-            Description = "Future Activity Fee",
-            Status = FeeStatus.Pending
-        };
+            {
+                FeeId = Guid.NewGuid(),
+                StudentId = Guid.NewGuid(),
+                Amount = 100.00m,
+                FeeType = FeeType.Tuition,
+                Description = "Test Fee",
+                DueDate = DateTime.UtcNow.AddDays(30),
+                CreatedAt = DateTime.UtcNow
+            };
 
         await _repo.CreateAsync(overdueFee1);
         await _repo.CreateAsync(overdueFee2);
@@ -459,41 +436,37 @@ public class FeeRepoTests
     {
         // Arrange
         var pendingFee1 = new Fee
-        {
-            FeeId = Guid.NewGuid(),
-            StudentId = _testStudent.Id,
-            FeeType = FeeType.Tuition,
-            Amount = 1000.00m,
-            PaidAmount = 0m,
-            DueDate = DateTime.UtcNow.AddDays(30),
-            Description = "Pending Tuition",
-            Status = FeeStatus.Pending
-        };
+            {
+                FeeId = Guid.NewGuid(),
+                StudentId = Guid.NewGuid(),
+                Amount = 100.00m,
+                FeeType = FeeType.Tuition,
+                Description = "Test Fee",
+                DueDate = DateTime.UtcNow.AddDays(30),
+                CreatedAt = DateTime.UtcNow
+            };
 
         var pendingFee2 = new Fee
-        {
-            FeeId = Guid.NewGuid(),
-            StudentId = _otherStudent.Id,
-            FeeType = FeeType.LabFee,
-            Amount = 200.00m,
-            PaidAmount = 0m,
-            DueDate = DateTime.UtcNow.AddDays(15),
-            Description = "Pending Lab Fee",
-            Status = FeeStatus.Pending
-        };
+            {
+                FeeId = Guid.NewGuid(),
+                StudentId = Guid.NewGuid(),
+                Amount = 100.00m,
+                FeeType = FeeType.Tuition,
+                Description = "Test Fee",
+                DueDate = DateTime.UtcNow.AddDays(30),
+                CreatedAt = DateTime.UtcNow
+            };
 
         var paidFee = new Fee
-        {
-            FeeId = Guid.NewGuid(),
-            StudentId = _testStudent.Id,
-            FeeType = FeeType.LibraryFee,
-            Amount = 100.00m,
-            PaidAmount = 100.00m,
-            DueDate = DateTime.UtcNow.AddDays(20),
-            Description = "Paid Library Fee",
-            Status = FeeStatus.Paid,
-            IsPaid = true
-        };
+            {
+                FeeId = Guid.NewGuid(),
+                StudentId = Guid.NewGuid(),
+                Amount = 100.00m,
+                FeeType = FeeType.Tuition,
+                Description = "Test Fee",
+                DueDate = DateTime.UtcNow.AddDays(30),
+                CreatedAt = DateTime.UtcNow
+            };
 
         await _repo.CreateAsync(pendingFee1);
         await _repo.CreateAsync(pendingFee2);
@@ -521,16 +494,15 @@ public class FeeRepoTests
     {
         // Arrange
         var fee = new Fee
-        {
-            FeeId = Guid.NewGuid(),
-            StudentId = _testStudent.Id,
-            FeeType = FeeType.Tuition,
-            Amount = 1000.00m,
-            PaidAmount = 0m,
-            DueDate = DateTime.UtcNow.AddDays(30),
-            Description = "Tuition Fee",
-            Status = FeeStatus.Pending
-        };
+            {
+                FeeId = Guid.NewGuid(),
+                StudentId = Guid.NewGuid(),
+                Amount = 100.00m,
+                FeeType = FeeType.Tuition,
+                Description = "Test Fee",
+                DueDate = DateTime.UtcNow.AddDays(30),
+                CreatedAt = DateTime.UtcNow
+            };
         await _repo.CreateAsync(fee);
 
         var payment = new Payment
@@ -568,16 +540,15 @@ public class FeeRepoTests
     {
         // Arrange
         var fee = new Fee
-        {
-            FeeId = Guid.NewGuid(),
-            StudentId = _testStudent.Id,
-            FeeType = FeeType.LabFee,
-            Amount = 500.00m,
-            PaidAmount = 200.00m, // Already partially paid
-            DueDate = DateTime.UtcNow.AddDays(15),
-            Description = "Lab Fee",
-            Status = FeeStatus.PartiallyPaid
-        };
+            {
+                FeeId = Guid.NewGuid(),
+                StudentId = Guid.NewGuid(),
+                Amount = 100.00m,
+                FeeType = FeeType.Tuition,
+                Description = "Test Fee",
+                DueDate = DateTime.UtcNow.AddDays(30),
+                CreatedAt = DateTime.UtcNow
+            };
         await _repo.CreateAsync(fee);
 
         var payment = new Payment
@@ -614,16 +585,15 @@ public class FeeRepoTests
     {
         // Arrange
         var fee = new Fee
-        {
-            FeeId = Guid.NewGuid(),
-            StudentId = _testStudent.Id,
-            FeeType = FeeType.LibraryFee,
-            Amount = 100.00m,
-            PaidAmount = 50.00m,
-            DueDate = DateTime.UtcNow.AddDays(10),
-            Description = "Library Fee",
-            Status = FeeStatus.PartiallyPaid
-        };
+            {
+                FeeId = Guid.NewGuid(),
+                StudentId = Guid.NewGuid(),
+                Amount = 100.00m,
+                FeeType = FeeType.Tuition,
+                Description = "Test Fee",
+                DueDate = DateTime.UtcNow.AddDays(30),
+                CreatedAt = DateTime.UtcNow
+            };
         await _repo.CreateAsync(fee);
 
         var payment = new Payment
@@ -670,16 +640,15 @@ public class FeeRepoTests
     {
         // Arrange
         var fee = new Fee
-        {
-            FeeId = Guid.NewGuid(),
-            StudentId = _testStudent.Id,
-            FeeType = FeeType.Tuition,
-            Amount = 1000.00m,
-            PaidAmount = 0m,
-            DueDate = DateTime.UtcNow.AddDays(30),
-            Description = "Tuition Fee",
-            Status = FeeStatus.Pending
-        };
+            {
+                FeeId = Guid.NewGuid(),
+                StudentId = Guid.NewGuid(),
+                Amount = 100.00m,
+                FeeType = FeeType.Tuition,
+                Description = "Test Fee",
+                DueDate = DateTime.UtcNow.AddDays(30),
+                CreatedAt = DateTime.UtcNow
+            };
         await _repo.CreateAsync(fee);
 
         var payment1 = new Payment
@@ -722,40 +691,37 @@ public class FeeRepoTests
     {
         // Arrange
         var fee1 = new Fee
-        {
-            FeeId = Guid.NewGuid(),
-            StudentId = _testStudent.Id,
-            FeeType = FeeType.Tuition,
-            Amount = 1000.00m,
-            PaidAmount = 0m,
-            DueDate = DateTime.UtcNow.AddDays(30),
-            Description = "Tuition Fee",
-            Status = FeeStatus.Pending
-        };
+            {
+                FeeId = Guid.NewGuid(),
+                StudentId = Guid.NewGuid(),
+                Amount = 100.00m,
+                FeeType = FeeType.Tuition,
+                Description = "Test Fee",
+                DueDate = DateTime.UtcNow.AddDays(30),
+                CreatedAt = DateTime.UtcNow
+            };
 
         var fee2 = new Fee
-        {
-            FeeId = Guid.NewGuid(),
-            StudentId = _testStudent.Id,
-            FeeType = FeeType.LabFee,
-            Amount = 200.00m,
-            PaidAmount = 0m,
-            DueDate = DateTime.UtcNow.AddDays(20),
-            Description = "Lab Fee",
-            Status = FeeStatus.Pending
-        };
+            {
+                FeeId = Guid.NewGuid(),
+                StudentId = Guid.NewGuid(),
+                Amount = 100.00m,
+                FeeType = FeeType.Tuition,
+                Description = "Test Fee",
+                DueDate = DateTime.UtcNow.AddDays(30),
+                CreatedAt = DateTime.UtcNow
+            };
 
         var otherStudentFee = new Fee
-        {
-            FeeId = Guid.NewGuid(),
-            StudentId = _otherStudent.Id,
-            FeeType = FeeType.LibraryFee,
-            Amount = 100.00m,
-            PaidAmount = 0m,
-            DueDate = DateTime.UtcNow.AddDays(15),
-            Description = "Library Fee",
-            Status = FeeStatus.Pending
-        };
+            {
+                FeeId = Guid.NewGuid(),
+                StudentId = Guid.NewGuid(),
+                Amount = 100.00m,
+                FeeType = FeeType.Tuition,
+                Description = "Test Fee",
+                DueDate = DateTime.UtcNow.AddDays(30),
+                CreatedAt = DateTime.UtcNow
+            };
 
         await _repo.CreateAsync(fee1);
         await _repo.CreateAsync(fee2);
@@ -814,16 +780,15 @@ public class FeeRepoTests
     {
         // Arrange
         var fee = new Fee
-        {
-            FeeId = Guid.NewGuid(),
-            StudentId = _testStudent.Id,
-            FeeType = FeeType.ActivityFee,
-            Amount = 150.00m,
-            PaidAmount = 0m,
-            DueDate = DateTime.UtcNow.AddDays(20),
-            Description = "Activity Fee",
-            Status = FeeStatus.Pending
-        };
+            {
+                FeeId = Guid.NewGuid(),
+                StudentId = Guid.NewGuid(),
+                Amount = 100.00m,
+                FeeType = FeeType.Tuition,
+                Description = "Test Fee",
+                DueDate = DateTime.UtcNow.AddDays(30),
+                CreatedAt = DateTime.UtcNow
+            };
         await _repo.CreateAsync(fee);
 
         // Act
@@ -848,53 +813,48 @@ public class FeeRepoTests
     {
         // Arrange
         var fee1 = new Fee
-        {
-            FeeId = Guid.NewGuid(),
-            StudentId = _testStudent.Id,
-            FeeType = FeeType.Tuition,
-            Amount = 1000.00m,
-            PaidAmount = 300.00m, // Outstanding: 700.00
-            DueDate = DateTime.UtcNow.AddDays(30),
-            Description = "Tuition Fee",
-            Status = FeeStatus.PartiallyPaid
-        };
+            {
+                FeeId = Guid.NewGuid(),
+                StudentId = Guid.NewGuid(),
+                Amount = 100.00m,
+                FeeType = FeeType.Tuition,
+                Description = "Test Fee",
+                DueDate = DateTime.UtcNow.AddDays(30),
+                CreatedAt = DateTime.UtcNow
+            };
 
         var fee2 = new Fee
-        {
-            FeeId = Guid.NewGuid(),
-            StudentId = _testStudent.Id,
-            FeeType = FeeType.LabFee,
-            Amount = 200.00m,
-            PaidAmount = 0m, // Outstanding: 200.00
-            DueDate = DateTime.UtcNow.AddDays(20),
-            Description = "Lab Fee",
-            Status = FeeStatus.Pending
-        };
+            {
+                FeeId = Guid.NewGuid(),
+                StudentId = Guid.NewGuid(),
+                Amount = 100.00m,
+                FeeType = FeeType.Tuition,
+                Description = "Test Fee",
+                DueDate = DateTime.UtcNow.AddDays(30),
+                CreatedAt = DateTime.UtcNow
+            };
 
         var fee3 = new Fee
-        {
-            FeeId = Guid.NewGuid(),
-            StudentId = _testStudent.Id,
-            FeeType = FeeType.LibraryFee,
-            Amount = 100.00m,
-            PaidAmount = 100.00m, // Outstanding: 0.00
-            DueDate = DateTime.UtcNow.AddDays(15),
-            Description = "Library Fee",
-            Status = FeeStatus.Paid,
-            IsPaid = true
-        };
+            {
+                FeeId = Guid.NewGuid(),
+                StudentId = Guid.NewGuid(),
+                Amount = 100.00m,
+                FeeType = FeeType.Tuition,
+                Description = "Test Fee",
+                DueDate = DateTime.UtcNow.AddDays(30),
+                CreatedAt = DateTime.UtcNow
+            };
 
         var otherStudentFee = new Fee
-        {
-            FeeId = Guid.NewGuid(),
-            StudentId = _otherStudent.Id,
-            FeeType = FeeType.ActivityFee,
-            Amount = 150.00m,
-            PaidAmount = 0m,
-            DueDate = DateTime.UtcNow.AddDays(10),
-            Description = "Activity Fee",
-            Status = FeeStatus.Pending
-        };
+            {
+                FeeId = Guid.NewGuid(),
+                StudentId = Guid.NewGuid(),
+                Amount = 100.00m,
+                FeeType = FeeType.Tuition,
+                Description = "Test Fee",
+                DueDate = DateTime.UtcNow.AddDays(30),
+                CreatedAt = DateTime.UtcNow
+            };
 
         await _repo.CreateAsync(fee1);
         await _repo.CreateAsync(fee2);
@@ -913,53 +873,48 @@ public class FeeRepoTests
     {
         // Arrange
         var fee1 = new Fee
-        {
-            FeeId = Guid.NewGuid(),
-            StudentId = _testStudent.Id,
-            FeeType = FeeType.Tuition,
-            Amount = 1000.00m,
-            PaidAmount = 300.00m,
-            DueDate = DateTime.UtcNow.AddDays(30),
-            Description = "Tuition Fee",
-            Status = FeeStatus.PartiallyPaid
-        };
+            {
+                FeeId = Guid.NewGuid(),
+                StudentId = Guid.NewGuid(),
+                Amount = 100.00m,
+                FeeType = FeeType.Tuition,
+                Description = "Test Fee",
+                DueDate = DateTime.UtcNow.AddDays(30),
+                CreatedAt = DateTime.UtcNow
+            };
 
         var fee2 = new Fee
-        {
-            FeeId = Guid.NewGuid(),
-            StudentId = _testStudent.Id,
-            FeeType = FeeType.LabFee,
-            Amount = 200.00m,
-            PaidAmount = 0m,
-            DueDate = DateTime.UtcNow.AddDays(20),
-            Description = "Lab Fee",
-            Status = FeeStatus.Pending
-        };
+            {
+                FeeId = Guid.NewGuid(),
+                StudentId = Guid.NewGuid(),
+                Amount = 100.00m,
+                FeeType = FeeType.Tuition,
+                Description = "Test Fee",
+                DueDate = DateTime.UtcNow.AddDays(30),
+                CreatedAt = DateTime.UtcNow
+            };
 
         var fee3 = new Fee
-        {
-            FeeId = Guid.NewGuid(),
-            StudentId = _testStudent.Id,
-            FeeType = FeeType.LibraryFee,
-            Amount = 100.00m,
-            PaidAmount = 100.00m,
-            DueDate = DateTime.UtcNow.AddDays(15),
-            Description = "Library Fee",
-            Status = FeeStatus.Paid,
-            IsPaid = true
-        };
+            {
+                FeeId = Guid.NewGuid(),
+                StudentId = Guid.NewGuid(),
+                Amount = 100.00m,
+                FeeType = FeeType.Tuition,
+                Description = "Test Fee",
+                DueDate = DateTime.UtcNow.AddDays(30),
+                CreatedAt = DateTime.UtcNow
+            };
 
         var otherStudentFee = new Fee
-        {
-            FeeId = Guid.NewGuid(),
-            StudentId = _otherStudent.Id,
-            FeeType = FeeType.ActivityFee,
-            Amount = 150.00m,
-            PaidAmount = 75.00m,
-            DueDate = DateTime.UtcNow.AddDays(10),
-            Description = "Activity Fee",
-            Status = FeeStatus.PartiallyPaid
-        };
+            {
+                FeeId = Guid.NewGuid(),
+                StudentId = Guid.NewGuid(),
+                Amount = 100.00m,
+                FeeType = FeeType.Tuition,
+                Description = "Test Fee",
+                DueDate = DateTime.UtcNow.AddDays(30),
+                CreatedAt = DateTime.UtcNow
+            };
 
         await _repo.CreateAsync(fee1);
         await _repo.CreateAsync(fee2);
@@ -982,16 +937,15 @@ public class FeeRepoTests
     {
         // Arrange
         var fee = new Fee
-        {
-            FeeId = Guid.NewGuid(),
-            StudentId = _testStudent.Id,
-            FeeType = FeeType.Tuition,
-            Amount = 1000.00m,
-            PaidAmount = 0m,
-            DueDate = DateTime.UtcNow.AddDays(30),
-            Description = "Tuition Fee",
-            Status = FeeStatus.Pending
-        };
+            {
+                FeeId = Guid.NewGuid(),
+                StudentId = Guid.NewGuid(),
+                Amount = 100.00m,
+                FeeType = FeeType.Tuition,
+                Description = "Test Fee",
+                DueDate = DateTime.UtcNow.AddDays(30),
+                CreatedAt = DateTime.UtcNow
+            };
         await _repo.CreateAsync(fee);
 
         var payment = new Payment
@@ -1022,16 +976,15 @@ public class FeeRepoTests
     {
         // Arrange
         var fee = new Fee
-        {
-            FeeId = Guid.NewGuid(),
-            StudentId = _testStudent.Id,
-            FeeType = FeeType.LabFee,
-            Amount = 500.00m,
-            PaidAmount = 200.00m,
-            DueDate = DateTime.UtcNow.AddDays(-5), // Overdue
-            Description = "Lab Fee",
-            Status = FeeStatus.PartiallyPaid
-        };
+            {
+                FeeId = Guid.NewGuid(),
+                StudentId = Guid.NewGuid(),
+                Amount = 100.00m,
+                FeeType = FeeType.Tuition,
+                Description = "Test Fee",
+                DueDate = DateTime.UtcNow.AddDays(30),
+                CreatedAt = DateTime.UtcNow
+            };
         await _repo.CreateAsync(fee);
 
         // Act
@@ -1064,16 +1017,15 @@ public class FeeRepoTests
     {
         // Arrange
         var fee = new Fee
-        {
-            FeeId = Guid.NewGuid(),
-            StudentId = _testStudent.Id,
-            FeeType = FeeType.Tuition,
-            Amount = 1000.00m,
-            PaidAmount = 0m,
-            DueDate = DateTime.UtcNow.AddDays(30),
-            Description = "Tuition Fee",
-            Status = FeeStatus.Pending
-        };
+            {
+                FeeId = Guid.NewGuid(),
+                StudentId = Guid.NewGuid(),
+                Amount = 100.00m,
+                FeeType = FeeType.Tuition,
+                Description = "Test Fee",
+                DueDate = DateTime.UtcNow.AddDays(30),
+                CreatedAt = DateTime.UtcNow
+            };
         await _repo.CreateAsync(fee);
 
         // Act
@@ -1089,16 +1041,15 @@ public class FeeRepoTests
     {
         // Arrange
         var fee = new Fee
-        {
-            FeeId = Guid.NewGuid(),
-            StudentId = _testStudent.Id,
-            FeeType = FeeType.Tuition,
-            Amount = 1000.00m,
-            PaidAmount = 0m,
-            DueDate = DateTime.UtcNow.AddDays(30), // Future due date
-            Description = "Tuition Fee",
-            Status = FeeStatus.Pending
-        };
+            {
+                FeeId = Guid.NewGuid(),
+                StudentId = Guid.NewGuid(),
+                Amount = 100.00m,
+                FeeType = FeeType.Tuition,
+                Description = "Test Fee",
+                DueDate = DateTime.UtcNow.AddDays(30),
+                CreatedAt = DateTime.UtcNow
+            };
         await _repo.CreateAsync(fee);
 
         // Act
@@ -1114,16 +1065,15 @@ public class FeeRepoTests
     {
         // Arrange
         var fee = new Fee
-        {
-            FeeId = Guid.NewGuid(),
-            StudentId = _testStudent.Id,
-            FeeType = FeeType.ActivityFee,
-            Amount = 150.00m,
-            PaidAmount = 0m,
-            DueDate = DateTime.UtcNow.AddDays(20),
-            Description = "Activity Fee",
-            Status = FeeStatus.Pending
-        };
+            {
+                FeeId = Guid.NewGuid(),
+                StudentId = Guid.NewGuid(),
+                Amount = 100.00m,
+                FeeType = FeeType.Tuition,
+                Description = "Test Fee",
+                DueDate = DateTime.UtcNow.AddDays(30),
+                CreatedAt = DateTime.UtcNow
+            };
         await _repo.CreateAsync(fee);
 
         // Act
@@ -1159,16 +1109,15 @@ public class FeeRepoTests
     {
         // Arrange
         var fee = new Fee
-        {
-            FeeId = Guid.NewGuid(),
-            StudentId = _testStudent.Id,
-            FeeType = FeeType.LibraryFee,
-            Amount = 100.00m,
-            PaidAmount = 0m,
-            DueDate = DateTime.UtcNow.AddDays(10),
-            Description = "Library Fee",
-            Status = FeeStatus.Pending
-        };
+            {
+                FeeId = Guid.NewGuid(),
+                StudentId = Guid.NewGuid(),
+                Amount = 100.00m,
+                FeeType = FeeType.Tuition,
+                Description = "Test Fee",
+                DueDate = DateTime.UtcNow.AddDays(30),
+                CreatedAt = DateTime.UtcNow
+            };
         await _repo.CreateAsync(fee);
 
         var payment = new Payment
@@ -1195,4 +1144,5 @@ public class FeeRepoTests
     }
 
     #endregion
+
 }

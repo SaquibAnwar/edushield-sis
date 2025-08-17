@@ -9,6 +9,9 @@ public class Performance(Guid performanceId, Guid studentId, Guid facultyId, str
     
     public Guid PerformanceId { get; init; } = performanceId;
     public Guid StudentId { get; set; } = studentId;
+    
+    // Backward compatibility property for tests
+    public Guid Id => PerformanceId;
     public Guid FacultyId { get; set; } = facultyId;
     public string Subject { get; set; } = subject;
     public decimal Marks { get; set; } = marks;

@@ -327,4 +327,5 @@ public class PerformanceRepoTests
         // Assert
         Assert.That(result, Is.False);
     }
+
 }

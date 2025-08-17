@@ -11,4 +11,7 @@ public class ExternalUserInfo
     public string? ProfilePictureUrl { get; set; }
     public AuthProvider Provider { get; set; }
     public Dictionary<string, string> Claims { get; set; } = new();
+    
+    // Legacy property for backward compatibility
+    public string Name => $"{FirstName} {LastName}".Trim();
 }

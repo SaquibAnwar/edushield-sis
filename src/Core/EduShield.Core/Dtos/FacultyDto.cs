@@ -9,6 +9,7 @@ public class FacultyDto
     public string Department { get; set; } = string.Empty;
     public string Subject { get; set; } = string.Empty;
     public Gender Gender { get; set; }
+    public Guid? UserId { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 }

@@ -64,4 +64,12 @@ public static class SecurityHelper
     {
         return string.Equals(scheme, "https", StringComparison.OrdinalIgnoreCase);
     }
+
+    public static string GenerateSecureToken()
+    {
+        using var rng = RandomNumberGenerator.Create();
+        var bytes = new byte[32];
+        rng.GetBytes(bytes);
+        return Convert.ToBase64String(bytes);
+    }
 }

@@ -63,4 +63,60 @@ public class AuditRepo : IAuditRepo
         
         return oldLogs.Count;
     }
+
+    public async Task<IEnumerable<AuditLog>> GetByActionAsync(string action, CancellationToken cancellationToken = default)
+    {
+        return await _context.AuditLogs
+            .Where(l => l.Action == action)
+            .OrderByDescending(l => l.CreatedAt)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IEnumerable<AuditLog>> GetByDateRangeAsync(DateTime fromDate, DateTime toDate, CancellationToken cancellationToken = default)
+    {
+        return await _context.AuditLogs
+            .Where(l => l.CreatedAt >= fromDate && l.CreatedAt <= toDate)
+            .OrderByDescending(l => l.CreatedAt)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IEnumerable<AuditLog>> GetByActionsAsync(string[] actions, DateTime? fromDate = null, DateTime? toDate = null, CancellationToken cancellationToken = default)
+    {
+        var query = _context.AuditLogs
+            .Where(l => actions.Contains(l.Action));
+
+        if (fromDate.HasValue)
+        {
+            query = query.Where(l => l.CreatedAt >= fromDate.Value);
+        }
+
+        if (toDate.HasValue)
+        {
+            query = query.Where(l => l.CreatedAt <= toDate.Value);
+        }
+
+        return await query
+            .OrderByDescending(l => l.CreatedAt)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<int> DeleteOlderThanAsync(DateTime cutoffDate, CancellationToken cancellationToken = default)
+    {
+        return await DeleteOldLogsAsync(cutoffDate, cancellationToken);
+    }
+
+    public async Task<IEnumerable<AuditLog>> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        return await _context.AuditLogs
+            .Where(l => l.UserId == userId)
+            .OrderByDescending(l => l.CreatedAt)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IEnumerable<AuditLog>> GetAllAsync(CancellationToken cancellationToken = default)
+    {
+        return await _context.AuditLogs
+            .OrderByDescending(l => l.CreatedAt)
+            .ToListAsync(cancellationToken);
+    }
 }

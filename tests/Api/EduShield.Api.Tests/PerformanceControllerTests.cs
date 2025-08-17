@@ -4,6 +4,7 @@ using Moq;
 using EduShield.Core.Dtos;
 using EduShield.Core.Interfaces;
 using EduShield.Api.Controllers;
+using Microsoft.AspNetCore.Authorization;
 
 namespace EduShield.Api.Tests;
 
@@ -11,14 +12,16 @@ namespace EduShield.Api.Tests;
 public class PerformanceControllerTests
 {
     private readonly Mock<IPerformanceService> _mockPerformanceService;
+    private readonly Mock<IAuthorizationService> _mockAuthorizationService;
     private readonly Mock<ILogger<PerformanceController>> _mockLogger;
     private readonly PerformanceController _controller;
 
     public PerformanceControllerTests()
     {
         _mockPerformanceService = new Mock<IPerformanceService>();
+        _mockAuthorizationService = new Mock<IAuthorizationService>();
         _mockLogger = new Mock<ILogger<PerformanceController>>();
-        _controller = new PerformanceController(_mockPerformanceService.Object, _mockLogger.Object);
+        _controller = new PerformanceController(_mockPerformanceService.Object, _mockAuthorizationService.Object, _mockLogger.Object);
     }
 
     [Test]
@@ -35,8 +38,7 @@ public class PerformanceControllerTests
             ExamDate = DateTime.UtcNow.AddDays(-1)
         };
         var performanceId = Guid.NewGuid();
-        _mockPerformanceService.Setup(x => x.CreateAsync(request, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(performanceId);
+        _mockPerformanceService.Setup(x => x.CreateAsync(It.IsAny<CancellationToken>())).ReturnsAsync(performanceId);
 
         // Act
         var result = await _controller.Create(request, CancellationToken.None);
@@ -61,7 +63,7 @@ public class PerformanceControllerTests
             MaxMarks = 100m,
             ExamDate = DateTime.UtcNow.AddDays(-1)
         };
-        _mockPerformanceService.Setup(x => x.CreateAsync(request, It.IsAny<CancellationToken>()))
+        _mockPerformanceService.Setup(x => x.CreateAsync(request))
             .ThrowsAsync(new ArgumentException("Student not found"));
 
         // Act
@@ -84,7 +86,7 @@ public class PerformanceControllerTests
             MaxMarks = 100m,
             ExamDate = DateTime.UtcNow.AddDays(-1)
         };
-        _mockPerformanceService.Setup(x => x.CreateAsync(request, It.IsAny<CancellationToken>()))
+        _mockPerformanceService.Setup(x => x.CreateAsync(request))
             .ThrowsAsync(new Exception("Service error"));
 
         // Act
@@ -112,8 +114,11 @@ public class PerformanceControllerTests
             ExamDate = DateTime.UtcNow.AddDays(-1),
             Percentage = 85m
         };
-        _mockPerformanceService.Setup(x => x.GetAsync(performanceId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(performanceDto);
+        _mockPerformanceService.Setup(x => x.GetAsync(It.IsAny<CancellationToken>())).ReturnsAsync(performanceDto);
+        
+        // Setup authorization to succeed
+        _mockAuthorizationService.Setup(x => x.AuthorizeAsync(It.IsAny<System.Security.Claims.ClaimsPrincipal>(), It.IsAny<object>(), It.IsAny<string>()))
+            .ReturnsAsync(AuthorizationResult.Success());
 
         // Act
         var result = await _controller.Get(performanceId, CancellationToken.None);
@@ -130,7 +135,7 @@ public class PerformanceControllerTests
     {
         // Arrange
         var performanceId = Guid.NewGuid();
-        _mockPerformanceService.Setup(x => x.GetAsync(performanceId, It.IsAny<CancellationToken>()))
+        _mockPerformanceService.Setup(x => x.GetAsync(performanceId))
             .ReturnsAsync((PerformanceDto?)null);
 
         // Act
@@ -151,6 +156,10 @@ public class PerformanceControllerTests
         };
         _mockPerformanceService.Setup(x => x.GetAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(performances);
+        
+        // Setup authorization to succeed
+        _mockAuthorizationService.Setup(x => x.AuthorizeAsync(It.IsAny<System.Security.Claims.ClaimsPrincipal>(), It.IsAny<object>(), It.IsAny<string>()))
+            .ReturnsAsync(AuthorizationResult.Success());
 
         // Act
         var result = await _controller.GetAll(CancellationToken.None);
@@ -171,8 +180,11 @@ public class PerformanceControllerTests
         {
             new() { PerformanceId = Guid.NewGuid(), StudentId = studentId, Subject = "Math", Marks = 85m, MaxMarks = 100m, Percentage = 85m }
         };
-        _mockPerformanceService.Setup(x => x.GetByStudentIdAsync(studentId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(performances);
+        _mockPerformanceService.Setup(x => x.GetByStudentIdAsync(It.IsAny<CancellationToken>())).ReturnsAsync(performances);
+        
+        // Setup authorization to succeed
+        _mockAuthorizationService.Setup(x => x.AuthorizeAsync(It.IsAny<System.Security.Claims.ClaimsPrincipal>(), It.IsAny<object>(), It.IsAny<string>()))
+            .ReturnsAsync(AuthorizationResult.Success());
 
         // Act
         var result = await _controller.GetByStudent(studentId, CancellationToken.None);
@@ -194,8 +206,7 @@ public class PerformanceControllerTests
         {
             new() { PerformanceId = Guid.NewGuid(), FacultyId = facultyId, Subject = "Math", Marks = 85m, MaxMarks = 100m, Percentage = 85m }
         };
-        _mockPerformanceService.Setup(x => x.GetByFacultyIdAsync(facultyId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(performances);
+        _mockPerformanceService.Setup(x => x.GetByFacultyIdAsync(It.IsAny<CancellationToken>())).ReturnsAsync(performances);
 
         // Act
         var result = await _controller.GetByFaculty(facultyId, CancellationToken.None);
@@ -222,8 +233,7 @@ public class PerformanceControllerTests
             MaxMarks = 100m,
             ExamDate = DateTime.UtcNow.AddDays(-1)
         };
-        _mockPerformanceService.Setup(x => x.UpdateAsync(performanceId, request, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
+        _mockPerformanceService.Setup(x => x.UpdateAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
         // Act
         var result = await _controller.Update(performanceId, request, CancellationToken.None);
@@ -246,8 +256,7 @@ public class PerformanceControllerTests
             MaxMarks = 100m,
             ExamDate = DateTime.UtcNow.AddDays(-1)
         };
-        _mockPerformanceService.Setup(x => x.UpdateAsync(performanceId, request, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(false);
+        _mockPerformanceService.Setup(x => x.UpdateAsync(It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
         // Act
         var result = await _controller.Update(performanceId, request, CancellationToken.None);
@@ -261,8 +270,7 @@ public class PerformanceControllerTests
     {
         // Arrange
         var performanceId = Guid.NewGuid();
-        _mockPerformanceService.Setup(x => x.DeleteAsync(performanceId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
+        _mockPerformanceService.Setup(x => x.DeleteAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
         // Act
         var result = await _controller.Delete(performanceId, CancellationToken.None);
@@ -276,8 +284,7 @@ public class PerformanceControllerTests
     {
         // Arrange
         var performanceId = Guid.NewGuid();
-        _mockPerformanceService.Setup(x => x.DeleteAsync(performanceId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(false);
+        _mockPerformanceService.Setup(x => x.DeleteAsync(It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
         // Act
         var result = await _controller.Delete(performanceId, CancellationToken.None);
@@ -285,4 +292,5 @@ public class PerformanceControllerTests
         // Assert
         Assert.That(result, Is.InstanceOf<NotFoundResult>());
     }
+
 }

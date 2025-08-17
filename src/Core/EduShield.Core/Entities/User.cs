@@ -8,6 +8,7 @@ public class User : AuditableEntity
     public string Email { get; set; } = string.Empty;
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
+    public string? PhoneNumber { get; set; }
     public string ExternalId { get; set; } = string.Empty; // From OIDC provider
     public AuthProvider Provider { get; set; }
     public UserRole Role { get; set; }
@@ -21,4 +22,8 @@ public class User : AuditableEntity
     
     // Computed properties
     public string FullName => $"{FirstName} {LastName}".Trim();
+    
+    // Legacy properties for backward compatibility
+    public Guid Id => UserId;
+    public string Name => FullName;
 }

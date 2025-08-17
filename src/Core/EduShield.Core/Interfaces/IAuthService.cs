@@ -13,4 +13,7 @@ public interface IAuthService
     Task InvalidateSessionAsync(string sessionId, CancellationToken cancellationToken = default);
     Task<bool> IsSessionValidAsync(string sessionId, CancellationToken cancellationToken = default);
     Task InvalidateAllUserSessionsAsync(Guid userId, CancellationToken cancellationToken = default);
+    Task<AuthResult> ValidateExternalTokenAsync(string token, string provider, CancellationToken cancellationToken = default);
+    Task<AuthResult> HandleCallbackAsync(string token, string ipAddress, string userAgent, CancellationToken cancellationToken = default);
+    Task<bool> ValidateSessionAsync(string sessionId, CancellationToken cancellationToken = default);
 }

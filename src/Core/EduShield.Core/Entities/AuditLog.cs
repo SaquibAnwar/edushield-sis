@@ -14,4 +14,9 @@ public class AuditLog : AuditableEntity
     
     // Navigation properties
     public User? User { get; set; }
+    
+    // Legacy properties for backward compatibility
+    public Guid Id => AuditId;
+    public DateTime Timestamp => CreatedAt;
+    public string? Details => AdditionalData;
 }

@@ -35,6 +35,19 @@ public class StudentEndpointsTests
         _factory?.Dispose();
     }
 
+    [SetUp]
+    public async Task SetUp()
+    {
+        // Ensure authentication is enabled for each test
+        TestAuthHandler.ShouldAuthenticate = true;
+        
+        // Clean up database before each test
+        using var scope = _factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<EduShieldDbContext>();
+        await dbContext.Database.EnsureDeletedAsync();
+        await dbContext.Database.EnsureCreatedAsync();
+    }
+
     [Test]
     public async Task CreateStudent_ValidRequest_ReturnsCreatedWithLocation()
     {
@@ -268,11 +281,11 @@ public class StudentEndpointsTests
     [Test]
     public async Task GetStudent_WithoutAuth_ReturnsUnauthorized()
     {
-        // Our GET endpoints are anonymous; ensure 200 even when auth is off
+        // GET endpoints require authentication, should return 401 when auth is off
         TestAuthHandler.ShouldAuthenticate = false;
         var client = _factory.CreateClient();
         var response = await client.GetAsync($"/api/v1/student");
-        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized));
         TestAuthHandler.ShouldAuthenticate = true;
     }
 
@@ -309,12 +322,13 @@ public class StudentEndpointsTests
     }
 
     [Test]
-    public async Task GetAllStudents_WithoutAuth_IsOk()
+    public async Task GetAllStudents_WithoutAuth_ReturnsUnauthorized()
     {
         TestAuthHandler.ShouldAuthenticate = false;
         var client = _factory.CreateClient();
         var response = await client.GetAsync("/api/v1/student");
-        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized));
         TestAuthHandler.ShouldAuthenticate = true;
     }
+
 }

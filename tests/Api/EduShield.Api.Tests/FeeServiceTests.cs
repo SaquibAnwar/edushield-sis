@@ -74,10 +74,9 @@ public class FeeServiceTests
         var student = CreateTestStudent(studentId);
         var createdFee = CreateTestFee(Guid.NewGuid(), studentId);
 
-        _mockCreateFeeValidator.Setup(x => x.ValidateAsync(request, It.IsAny<CancellationToken>()))
+        _mockCreateFeeValidator.Setup(x => x.ValidateAsync(request))
             .ReturnsAsync(new ValidationResult());
-        _mockStudentRepo.Setup(x => x.GetByIdAsync(studentId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(student);
+        _mockStudentRepo.Setup(x => x.GetByIdAsync(It.IsAny<CancellationToken>())).ReturnsAsync(student);
         _mockFeeRepo.Setup(x => x.CreateAsync(It.IsAny<Fee>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(createdFee);
 
@@ -115,8 +114,7 @@ public class FeeServiceTests
         };
         var validationResult = new ValidationResult(validationFailures);
 
-        _mockCreateFeeValidator.Setup(x => x.ValidateAsync(request, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(validationResult);
+        _mockCreateFeeValidator.Setup(x => x.ValidateAsync(It.IsAny<CancellationToken>())).ReturnsAsync(validationResult);
 
         // Act & Assert
         var ex = Assert.ThrowsAsync<ValidationException>(async () => await _service.CreateFeeAsync(request));
@@ -136,9 +134,9 @@ public class FeeServiceTests
             DueDate = DateTime.Today.AddDays(30)
         };
 
-        _mockCreateFeeValidator.Setup(x => x.ValidateAsync(request, It.IsAny<CancellationToken>()))
+        _mockCreateFeeValidator.Setup(x => x.ValidateAsync(request))
             .ReturnsAsync(new ValidationResult());
-        _mockStudentRepo.Setup(x => x.GetByIdAsync(studentId, It.IsAny<CancellationToken>()))
+        _mockStudentRepo.Setup(x => x.GetByIdAsync(studentId, CancellationToken.None))
             .ReturnsAsync((Student?)null);
 
         // Act & Assert
@@ -161,10 +159,8 @@ public class FeeServiceTests
             CreateTestPayment(Guid.NewGuid(), feeId, 500m)
         };
 
-        _mockFeeRepo.Setup(x => x.GetByIdAsync(feeId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(fee);
-        _mockFeeRepo.Setup(x => x.GetPaymentsByFeeIdAsync(feeId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(payments);
+        _mockFeeRepo.Setup(x => x.GetByIdAsync(It.IsAny<CancellationToken>())).ReturnsAsync(fee);
+        _mockFeeRepo.Setup(x => x.GetPaymentsByFeeIdAsync(It.IsAny<CancellationToken>())).ReturnsAsync(payments);
 
         // Act
         var result = await _service.GetFeeByIdAsync(feeId);
@@ -181,7 +177,7 @@ public class FeeServiceTests
     {
         // Arrange
         var feeId = Guid.NewGuid();
-        _mockFeeRepo.Setup(x => x.GetByIdAsync(feeId, It.IsAny<CancellationToken>()))
+        _mockFeeRepo.Setup(x => x.GetByIdAsync(feeId))
             .ReturnsAsync((Fee?)null);
 
         // Act
@@ -209,10 +205,9 @@ public class FeeServiceTests
             Description = "Updated lab fee"
         };
 
-        _mockUpdateFeeValidator.Setup(x => x.ValidateAsync(request, It.IsAny<CancellationToken>()))
+        _mockUpdateFeeValidator.Setup(x => x.ValidateAsync(request))
             .ReturnsAsync(new ValidationResult());
-        _mockFeeRepo.Setup(x => x.GetByIdAsync(feeId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(existingFee);
+        _mockFeeRepo.Setup(x => x.GetByIdAsync(It.IsAny<CancellationToken>())).ReturnsAsync(existingFee);
         _mockUpdateFeeBusinessValidator.Setup(x => x.ValidateAsync(It.IsAny<UpdateFeeValidationContext>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ValidationResult());
         _mockFeeRepo.Setup(x => x.UpdateAsync(It.IsAny<Fee>(), It.IsAny<CancellationToken>()))
@@ -242,9 +237,9 @@ public class FeeServiceTests
             DueDate = DateTime.Today.AddDays(45)
         };
 
-        _mockUpdateFeeValidator.Setup(x => x.ValidateAsync(request, It.IsAny<CancellationToken>()))
+        _mockUpdateFeeValidator.Setup(x => x.ValidateAsync(request))
             .ReturnsAsync(new ValidationResult());
-        _mockFeeRepo.Setup(x => x.GetByIdAsync(feeId, It.IsAny<CancellationToken>()))
+        _mockFeeRepo.Setup(x => x.GetByIdAsync(feeId))
             .ReturnsAsync((Fee?)null);
 
         // Act
@@ -274,10 +269,9 @@ public class FeeServiceTests
         };
         var validationResult = new ValidationResult(validationFailures);
 
-        _mockUpdateFeeValidator.Setup(x => x.ValidateAsync(request, It.IsAny<CancellationToken>()))
+        _mockUpdateFeeValidator.Setup(x => x.ValidateAsync(request))
             .ReturnsAsync(new ValidationResult());
-        _mockFeeRepo.Setup(x => x.GetByIdAsync(feeId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(existingFee);
+        _mockFeeRepo.Setup(x => x.GetByIdAsync(It.IsAny<CancellationToken>())).ReturnsAsync(existingFee);
         _mockUpdateFeeBusinessValidator.Setup(x => x.ValidateAsync(It.IsAny<UpdateFeeValidationContext>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(validationResult);
 
@@ -298,12 +292,9 @@ public class FeeServiceTests
         var existingFee = CreateTestFee(feeId, Guid.NewGuid());
         var emptyPayments = new List<Payment>();
 
-        _mockFeeRepo.Setup(x => x.GetByIdAsync(feeId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(existingFee);
-        _mockFeeRepo.Setup(x => x.GetPaymentsByFeeIdAsync(feeId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(emptyPayments);
-        _mockFeeRepo.Setup(x => x.DeleteAsync(feeId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
+        _mockFeeRepo.Setup(x => x.GetByIdAsync(It.IsAny<CancellationToken>())).ReturnsAsync(existingFee);
+        _mockFeeRepo.Setup(x => x.GetPaymentsByFeeIdAsync(It.IsAny<CancellationToken>())).ReturnsAsync(emptyPayments);
+        _mockFeeRepo.Setup(x => x.DeleteAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
         // Act
         var result = await _service.DeleteFeeAsync(feeId);
@@ -320,10 +311,8 @@ public class FeeServiceTests
         var feeId = Guid.NewGuid();
         var existingFee = CreateTestFee(feeId, Guid.NewGuid());
 
-        _mockFeeRepo.Setup(x => x.GetByIdAsync(feeId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(existingFee);
-        _mockFeeRepo.Setup(x => x.DeleteAsync(feeId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
+        _mockFeeRepo.Setup(x => x.GetByIdAsync(It.IsAny<CancellationToken>())).ReturnsAsync(existingFee);
+        _mockFeeRepo.Setup(x => x.DeleteAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
         // Act
         var result = await _service.DeleteFeeAsync(feeId);
@@ -338,7 +327,7 @@ public class FeeServiceTests
     {
         // Arrange
         var feeId = Guid.NewGuid();
-        _mockFeeRepo.Setup(x => x.GetByIdAsync(feeId, It.IsAny<CancellationToken>()))
+        _mockFeeRepo.Setup(x => x.GetByIdAsync(feeId))
             .ReturnsAsync((Fee?)null);
 
         // Act
@@ -372,10 +361,9 @@ public class FeeServiceTests
 
         var createdPayment = CreateTestPayment(Guid.NewGuid(), feeId, 500m);
 
-        _mockPaymentValidator.Setup(x => x.ValidateAsync(paymentRequest, It.IsAny<CancellationToken>()))
+        _mockPaymentValidator.Setup(x => x.ValidateAsync(paymentRequest))
             .ReturnsAsync(new ValidationResult());
-        _mockFeeRepo.Setup(x => x.GetByIdAsync(feeId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(fee);
+        _mockFeeRepo.Setup(x => x.GetByIdAsync(It.IsAny<CancellationToken>())).ReturnsAsync(fee);
         _mockPaymentBusinessValidator.Setup(x => x.ValidateAsync(It.IsAny<PaymentValidationContext>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ValidationResult());
         _mockFeeRepo.Setup(x => x.AddPaymentAsync(It.IsAny<Payment>(), It.IsAny<CancellationToken>()))
@@ -414,10 +402,9 @@ public class FeeServiceTests
 
         var createdPayment = CreateTestPayment(Guid.NewGuid(), feeId, 1000m);
 
-        _mockPaymentValidator.Setup(x => x.ValidateAsync(paymentRequest, It.IsAny<CancellationToken>()))
+        _mockPaymentValidator.Setup(x => x.ValidateAsync(paymentRequest))
             .ReturnsAsync(new ValidationResult());
-        _mockFeeRepo.Setup(x => x.GetByIdAsync(feeId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(fee);
+        _mockFeeRepo.Setup(x => x.GetByIdAsync(It.IsAny<CancellationToken>())).ReturnsAsync(fee);
         _mockPaymentBusinessValidator.Setup(x => x.ValidateAsync(It.IsAny<PaymentValidationContext>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ValidationResult());
         _mockFeeRepo.Setup(x => x.AddPaymentAsync(It.IsAny<Payment>(), It.IsAny<CancellationToken>()))
@@ -450,9 +437,9 @@ public class FeeServiceTests
             PaymentMethod = "Credit Card"
         };
 
-        _mockPaymentValidator.Setup(x => x.ValidateAsync(paymentRequest, It.IsAny<CancellationToken>()))
+        _mockPaymentValidator.Setup(x => x.ValidateAsync(paymentRequest))
             .ReturnsAsync(new ValidationResult());
-        _mockFeeRepo.Setup(x => x.GetByIdAsync(feeId, It.IsAny<CancellationToken>()))
+        _mockFeeRepo.Setup(x => x.GetByIdAsync(feeId))
             .ReturnsAsync((Fee?)null);
 
         // Act & Assert
@@ -482,10 +469,9 @@ public class FeeServiceTests
         };
         var validationResult = new ValidationResult(validationFailures);
 
-        _mockPaymentValidator.Setup(x => x.ValidateAsync(paymentRequest, It.IsAny<CancellationToken>()))
+        _mockPaymentValidator.Setup(x => x.ValidateAsync(paymentRequest))
             .ReturnsAsync(new ValidationResult());
-        _mockFeeRepo.Setup(x => x.GetByIdAsync(feeId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(fee);
+        _mockFeeRepo.Setup(x => x.GetByIdAsync(It.IsAny<CancellationToken>())).ReturnsAsync(fee);
         _mockPaymentBusinessValidator.Setup(x => x.ValidateAsync(It.IsAny<PaymentValidationContext>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(validationResult);
 
@@ -516,12 +502,9 @@ public class FeeServiceTests
             CreateTestPayment(Guid.NewGuid(), fees[1].FeeId, 200m)
         };
 
-        _mockStudentRepo.Setup(x => x.GetByIdAsync(studentId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(student);
-        _mockFeeRepo.Setup(x => x.GetByStudentIdAsync(studentId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(fees);
-        _mockFeeRepo.Setup(x => x.GetPaymentsByStudentIdAsync(studentId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(payments);
+        _mockStudentRepo.Setup(x => x.GetByIdAsync(It.IsAny<CancellationToken>())).ReturnsAsync(student);
+        _mockFeeRepo.Setup(x => x.GetByStudentIdAsync(It.IsAny<CancellationToken>())).ReturnsAsync(fees);
+        _mockFeeRepo.Setup(x => x.GetPaymentsByStudentIdAsync(It.IsAny<CancellationToken>())).ReturnsAsync(payments);
 
         // Act
         var result = await _service.GetStudentFeesSummaryAsync(studentId);
@@ -545,7 +528,7 @@ public class FeeServiceTests
     {
         // Arrange
         var studentId = Guid.NewGuid();
-        _mockStudentRepo.Setup(x => x.GetByIdAsync(studentId, It.IsAny<CancellationToken>()))
+        _mockStudentRepo.Setup(x => x.GetByIdAsync(studentId, CancellationToken.None))
             .ReturnsAsync((Student?)null);
 
         // Act & Assert
@@ -587,8 +570,7 @@ public class FeeServiceTests
             CreateTestFee(Guid.NewGuid(), studentId)
         };
 
-        _mockFeeRepo.Setup(x => x.GetByStudentIdAsync(studentId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(fees);
+        _mockFeeRepo.Setup(x => x.GetByStudentIdAsync(It.IsAny<CancellationToken>())).ReturnsAsync(fees);
 
         // Act
         var result = await _service.GetFeesByStudentIdAsync(studentId);
@@ -607,8 +589,7 @@ public class FeeServiceTests
             CreateTestFee(Guid.NewGuid(), Guid.NewGuid(), feeType: FeeType.Tuition)
         };
 
-        _mockFeeRepo.Setup(x => x.GetByFeeTypeAsync(FeeType.Tuition, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(fees);
+        _mockFeeRepo.Setup(x => x.GetByFeeTypeAsync(It.IsAny<CancellationToken>())).ReturnsAsync(fees);
 
         // Act
         var result = await _service.GetFeesByTypeAsync(FeeType.Tuition);
@@ -651,8 +632,7 @@ public class FeeServiceTests
         fee.Amount = 1000m;
         fee.PaidAmount = 500m;
 
-        _mockFeeRepo.Setup(x => x.GetByIdAsync(feeId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(fee);
+        _mockFeeRepo.Setup(x => x.GetByIdAsync(It.IsAny<CancellationToken>())).ReturnsAsync(fee);
         _mockFeeRepo.Setup(x => x.UpdateAsync(It.IsAny<Fee>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(fee);
 
@@ -716,10 +696,9 @@ public class FeeServiceTests
 
         var createdPayment = CreateTestPayment(Guid.NewGuid(), feeId, 300m);
 
-        _mockPaymentValidator.Setup(x => x.ValidateAsync(paymentRequest, It.IsAny<CancellationToken>()))
+        _mockPaymentValidator.Setup(x => x.ValidateAsync(paymentRequest))
             .ReturnsAsync(new ValidationResult());
-        _mockFeeRepo.Setup(x => x.GetByIdAsync(feeId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(fee);
+        _mockFeeRepo.Setup(x => x.GetByIdAsync(It.IsAny<CancellationToken>())).ReturnsAsync(fee);
         _mockPaymentBusinessValidator.Setup(x => x.ValidateAsync(It.IsAny<PaymentValidationContext>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ValidationResult());
         _mockFeeRepo.Setup(x => x.AddPaymentAsync(It.IsAny<Payment>(), It.IsAny<CancellationToken>()))
@@ -759,10 +738,9 @@ public class FeeServiceTests
 
         var createdPayment = CreateTestPayment(Guid.NewGuid(), feeId, 300m);
 
-        _mockPaymentValidator.Setup(x => x.ValidateAsync(paymentRequest, It.IsAny<CancellationToken>()))
+        _mockPaymentValidator.Setup(x => x.ValidateAsync(paymentRequest))
             .ReturnsAsync(new ValidationResult());
-        _mockFeeRepo.Setup(x => x.GetByIdAsync(feeId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(fee);
+        _mockFeeRepo.Setup(x => x.GetByIdAsync(It.IsAny<CancellationToken>())).ReturnsAsync(fee);
         _mockPaymentBusinessValidator.Setup(x => x.ValidateAsync(It.IsAny<PaymentValidationContext>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ValidationResult());
         _mockFeeRepo.Setup(x => x.AddPaymentAsync(It.IsAny<Payment>(), It.IsAny<CancellationToken>()))
@@ -823,8 +801,7 @@ public class FeeServiceTests
         };
         var validationResult = new ValidationResult(validationFailures);
 
-        _mockCreateFeeValidator.Setup(x => x.ValidateAsync(request, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(validationResult);
+        _mockCreateFeeValidator.Setup(x => x.ValidateAsync(It.IsAny<CancellationToken>())).ReturnsAsync(validationResult);
 
         // Act & Assert
         var ex = Assert.ThrowsAsync<ValidationException>(async () => await _service.CreateFeeAsync(request));
@@ -850,8 +827,7 @@ public class FeeServiceTests
         };
         var validationResult = new ValidationResult(validationFailures);
 
-        _mockCreateFeeValidator.Setup(x => x.ValidateAsync(request, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(validationResult);
+        _mockCreateFeeValidator.Setup(x => x.ValidateAsync(It.IsAny<CancellationToken>())).ReturnsAsync(validationResult);
 
         // Act & Assert
         var ex = Assert.ThrowsAsync<ValidationException>(async () => await _service.CreateFeeAsync(request));
@@ -877,8 +853,7 @@ public class FeeServiceTests
         };
         var validationResult = new ValidationResult(validationFailures);
 
-        _mockUpdateFeeValidator.Setup(x => x.ValidateAsync(request, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(validationResult);
+        _mockUpdateFeeValidator.Setup(x => x.ValidateAsync(It.IsAny<CancellationToken>())).ReturnsAsync(validationResult);
 
         // Act & Assert
         var ex = Assert.ThrowsAsync<ValidationException>(async () => await _service.UpdateFeeAsync(feeId, request));
@@ -905,8 +880,7 @@ public class FeeServiceTests
         };
         var validationResult = new ValidationResult(validationFailures);
 
-        _mockPaymentValidator.Setup(x => x.ValidateAsync(paymentRequest, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(validationResult);
+        _mockPaymentValidator.Setup(x => x.ValidateAsync(It.IsAny<CancellationToken>())).ReturnsAsync(validationResult);
 
         // Act & Assert
         var ex = Assert.ThrowsAsync<ValidationException>(async () => await _service.RecordPaymentAsync(feeId, paymentRequest));
@@ -926,12 +900,9 @@ public class FeeServiceTests
         var emptyFees = new List<Fee>();
         var emptyPayments = new List<Payment>();
 
-        _mockStudentRepo.Setup(x => x.GetByIdAsync(studentId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(student);
-        _mockFeeRepo.Setup(x => x.GetByStudentIdAsync(studentId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(emptyFees);
-        _mockFeeRepo.Setup(x => x.GetPaymentsByStudentIdAsync(studentId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(emptyPayments);
+        _mockStudentRepo.Setup(x => x.GetByIdAsync(It.IsAny<CancellationToken>())).ReturnsAsync(student);
+        _mockFeeRepo.Setup(x => x.GetByStudentIdAsync(It.IsAny<CancellationToken>())).ReturnsAsync(emptyFees);
+        _mockFeeRepo.Setup(x => x.GetPaymentsByStudentIdAsync(It.IsAny<CancellationToken>())).ReturnsAsync(emptyPayments);
 
         // Act
         var result = await _service.GetStudentFeesSummaryAsync(studentId);
@@ -978,12 +949,9 @@ public class FeeServiceTests
             });
         }
 
-        _mockStudentRepo.Setup(x => x.GetByIdAsync(studentId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(student);
-        _mockFeeRepo.Setup(x => x.GetByStudentIdAsync(studentId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(fees);
-        _mockFeeRepo.Setup(x => x.GetPaymentsByStudentIdAsync(studentId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(payments);
+        _mockStudentRepo.Setup(x => x.GetByIdAsync(It.IsAny<CancellationToken>())).ReturnsAsync(student);
+        _mockFeeRepo.Setup(x => x.GetByStudentIdAsync(It.IsAny<CancellationToken>())).ReturnsAsync(fees);
+        _mockFeeRepo.Setup(x => x.GetPaymentsByStudentIdAsync(It.IsAny<CancellationToken>())).ReturnsAsync(payments);
 
         // Act
         var result = await _service.GetStudentFeesSummaryAsync(studentId);
@@ -1002,7 +970,7 @@ public class FeeServiceTests
     {
         // Arrange
         var feeId = Guid.NewGuid();
-        _mockFeeRepo.Setup(x => x.GetByIdAsync(feeId, It.IsAny<CancellationToken>()))
+        _mockFeeRepo.Setup(x => x.GetByIdAsync(feeId))
             .ReturnsAsync((Fee?)null);
 
         // Act
@@ -1023,7 +991,7 @@ public class FeeServiceTests
             CreateTestFee(Guid.NewGuid(), Guid.NewGuid(), status: FeeStatus.Pending)
         };
 
-        _mockFeeRepo.Setup(x => x.GetByStatusAsync(FeeStatus.Paid, It.IsAny<CancellationToken>()))
+        _mockFeeRepo.Setup(x => x.GetByStatusAsync(FeeStatus.Paid))
             .ReturnsAsync(fees.Where(f => f.Status == FeeStatus.Paid));
 
         // Act
@@ -1045,10 +1013,8 @@ public class FeeServiceTests
             CreateTestPayment(Guid.NewGuid(), feeId, 300m)
         };
 
-        _mockFeeRepo.Setup(x => x.ExistsAsync(feeId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
-        _mockFeeRepo.Setup(x => x.GetPaymentsByFeeIdAsync(feeId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(payments);
+        _mockFeeRepo.Setup(x => x.ExistsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        _mockFeeRepo.Setup(x => x.GetPaymentsByFeeIdAsync(It.IsAny<CancellationToken>())).ReturnsAsync(payments);
 
         // Act
         var result = await _service.GetPaymentsByFeeIdAsync(feeId);
@@ -1069,8 +1035,7 @@ public class FeeServiceTests
             CreateTestPayment(Guid.NewGuid(), Guid.NewGuid(), 300m)
         };
 
-        _mockFeeRepo.Setup(x => x.GetPaymentsByStudentIdAsync(studentId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(payments);
+        _mockFeeRepo.Setup(x => x.GetPaymentsByStudentIdAsync(It.IsAny<CancellationToken>())).ReturnsAsync(payments);
 
         // Act
         var result = await _service.GetPaymentsByStudentIdAsync(studentId);
@@ -1103,10 +1068,9 @@ public class FeeServiceTests
 
         var createdPayment = CreateTestPayment(Guid.NewGuid(), feeId, 200m);
 
-        _mockPaymentValidator.Setup(x => x.ValidateAsync(paymentRequest, It.IsAny<CancellationToken>()))
+        _mockPaymentValidator.Setup(x => x.ValidateAsync(paymentRequest))
             .ReturnsAsync(new ValidationResult());
-        _mockFeeRepo.Setup(x => x.GetByIdAsync(feeId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(fee);
+        _mockFeeRepo.Setup(x => x.GetByIdAsync(It.IsAny<CancellationToken>())).ReturnsAsync(fee);
         _mockPaymentBusinessValidator.Setup(x => x.ValidateAsync(It.IsAny<PaymentValidationContext>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ValidationResult());
         _mockFeeRepo.Setup(x => x.AddPaymentAsync(It.IsAny<Payment>(), It.IsAny<CancellationToken>()))
@@ -1148,10 +1112,9 @@ public class FeeServiceTests
         var student = CreateTestStudent(studentId);
         var createdFee = CreateTestFee(Guid.NewGuid(), studentId);
 
-        _mockCreateFeeValidator.Setup(x => x.ValidateAsync(request, It.IsAny<CancellationToken>()))
+        _mockCreateFeeValidator.Setup(x => x.ValidateAsync(request))
             .ReturnsAsync(new ValidationResult());
-        _mockStudentRepo.Setup(x => x.GetByIdAsync(studentId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(student);
+        _mockStudentRepo.Setup(x => x.GetByIdAsync(It.IsAny<CancellationToken>())).ReturnsAsync(student);
         _mockFeeRepo.Setup(x => x.CreateAsync(It.IsAny<Fee>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(createdFee);
 
@@ -1191,10 +1154,9 @@ public class FeeServiceTests
             Description = "Updated activity fee"
         };
 
-        _mockUpdateFeeValidator.Setup(x => x.ValidateAsync(request, It.IsAny<CancellationToken>()))
+        _mockUpdateFeeValidator.Setup(x => x.ValidateAsync(request))
             .ReturnsAsync(new ValidationResult());
-        _mockFeeRepo.Setup(x => x.GetByIdAsync(feeId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(existingFee);
+        _mockFeeRepo.Setup(x => x.GetByIdAsync(It.IsAny<CancellationToken>())).ReturnsAsync(existingFee);
         _mockUpdateFeeBusinessValidator.Setup(x => x.ValidateAsync(It.IsAny<UpdateFeeValidationContext>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ValidationResult());
         _mockFeeRepo.Setup(x => x.UpdateAsync(It.IsAny<Fee>(), It.IsAny<CancellationToken>()))
@@ -1239,20 +1201,15 @@ public class FeeServiceTests
     {
         var actualDueDate = dueDate ?? DateTime.Today.AddDays(30);
         var fee = new Fee
-        {
-            FeeId = feeId,
-            StudentId = studentId,
-            FeeType = feeType,
-            Amount = amount,
-            PaidAmount = paidAmount,
-            DueDate = actualDueDate,
-            Description = "Test fee",
-            Status = status,
-            IsPaid = status == FeeStatus.Paid,
-            PaidDate = status == FeeStatus.Paid ? DateTime.UtcNow : null,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
+            {
+                FeeId = Guid.NewGuid(),
+                StudentId = Guid.NewGuid(),
+                Amount = 100.00m,
+                FeeType = FeeType.Tuition,
+                Description = "Test Fee",
+                DueDate = DateTime.UtcNow.AddDays(30),
+                CreatedAt = DateTime.UtcNow
+            };
 
         return fee;
     }
@@ -1273,4 +1230,5 @@ public class FeeServiceTests
     }
 
     #endregion
+
 }

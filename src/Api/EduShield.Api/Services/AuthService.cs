@@ -103,7 +103,8 @@ public class AuthService : IAuthService
                 LastName = userInfo.LastName,
                 ProfilePictureUrl = userInfo.ProfilePictureUrl
             };
-            return await _userService.UpdateUserAsync(existingUser.UserId, updateRequest, cancellationToken);
+            await _userService.UpdateUserAsync(existingUser.UserId, updateRequest, cancellationToken);
+            return existingUser;
         }
 
         // Create new user
@@ -161,8 +162,60 @@ public class AuthService : IAuthService
 
     public async Task InvalidateAllUserSessionsAsync(Guid userId, CancellationToken cancellationToken = default)
     {
-        await _sessionService.InvalidateAllUserSessionsAsync(userId, cancellationToken);
+        await _sessionService.InvalidateUserSessionsAsync(userId, cancellationToken);
         await _auditService.LogAsync("AllSessionsInvalidated", "UserSession", userId, true, cancellationToken: cancellationToken);
+    }
+
+    public async Task<AuthResult> ValidateExternalTokenAsync(string token, string provider, CancellationToken cancellationToken = default)
+    {
+        return await AuthenticateAsync(token, provider, cancellationToken);
+    }
+
+    public async Task<AuthResult> HandleCallbackAsync(string token, string ipAddress, string userAgent, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var userInfo = await ExtractUserInfoFromTokenAsync(token, "Google", cancellationToken);
+            if (userInfo == null)
+            {
+                return new AuthResult { Success = false, ErrorMessage = "Invalid token" };
+            }
+
+            var user = await GetOrCreateUserAsync(userInfo, cancellationToken);
+            var session = await CreateSessionAsync(user.UserId, ipAddress, userAgent, cancellationToken);
+
+            return new AuthResult
+            {
+                Success = true,
+                User = new UserDto
+                {
+                    UserId = user.UserId,
+                    Email = user.Email,
+                    FirstName = user.FirstName,
+                    LastName = user.LastName,
+                    FullName = user.FullName,
+                    Provider = user.Provider,
+                    Role = user.Role,
+                    IsActive = user.IsActive,
+                    LastLoginAt = user.LastLoginAt,
+                    ProfilePictureUrl = user.ProfilePictureUrl,
+                    CreatedAt = user.CreatedAt,
+                    UpdatedAt = user.UpdatedAt
+                },
+                SessionToken = session.SessionToken,
+                ExpiresAt = session.ExpiresAt
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error handling callback");
+            return new AuthResult { Success = false, ErrorMessage = "Authentication failed" };
+        }
+    }
+
+    public async Task<bool> ValidateSessionAsync(string sessionId, CancellationToken cancellationToken = default)
+    {
+        return await IsSessionValidAsync(sessionId, cancellationToken);
     }
 
     private async Task<ExternalUserInfo?> ExtractUserInfoFromTokenAsync(string token, string provider, CancellationToken cancellationToken)

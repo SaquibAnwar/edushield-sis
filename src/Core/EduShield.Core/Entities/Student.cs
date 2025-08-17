@@ -25,4 +25,7 @@ public class Student : AuditableEntity
     // Authentication relationship
     public User? User { get; set; }
     public Guid? UserId { get; set; }
+    
+    // Parent relationship
+    public Guid? ParentId { get; set; }
 }

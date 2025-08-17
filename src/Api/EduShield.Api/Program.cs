@@ -1,6 +1,9 @@
 using EduShield.Api.Auth;
+using EduShield.Api.Auth.Handlers;
+using EduShield.Api.Auth.Requirements;
 using EduShield.Api.Data;
 using EduShield.Api.Services;
+using EduShield.Api.Middleware;
 using EduShield.Core.Data;
 using EduShield.Core.Interfaces;
 using EduShield.Core.Mapping;
@@ -8,6 +11,7 @@ using EduShield.Core.Validators;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -56,7 +60,7 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 // Add AutoMapper
-builder.Services.AddAutoMapper(typeof(StudentMappingProfile), typeof(FacultyMappingProfile), typeof(PerformanceMappingProfile), typeof(FeeMappingProfile), typeof(PaymentMappingProfile), typeof(UserMappingProfile));
+builder.Services.AddAutoMapper(typeof(StudentMappingProfile), typeof(FacultyMappingProfile), typeof(PerformanceMappingProfile), typeof(FeeMappingProfile), typeof(PaymentMappingProfile), typeof(UserMappingProfile), typeof(SessionMappingProfile));
 
 // Add FluentValidation
 builder.Services.AddFluentValidationAutoValidation()
@@ -73,7 +77,8 @@ if (builder.Environment.IsEnvironment("Testing") || useInMemory)
 else
 {
     builder.Services.AddDbContext<EduShieldDbContext>(options =>
-        options.UseNpgsql(builder.Configuration.GetConnectionString("Postgres")));
+        options.UseNpgsql(builder.Configuration.GetConnectionString("Postgres"), 
+            b => b.MigrationsAssembly("EduShield.Api")));
 }
 
 // Add Repositories
@@ -94,6 +99,9 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ISessionService, SessionService>();
 builder.Services.AddScoped<IAuditService, AuditService>();
+builder.Services.AddScoped<ISecurityMonitoringService, SecurityMonitoringService>();
+builder.Services.AddScoped<IConfigurationValidationService, ConfigurationValidationService>();
+builder.Services.AddScoped<ITestDataSeeder, TestDataSeeder>();
 
 // Add Authentication Configuration
 builder.Services.Configure<EduShield.Core.Configuration.AuthenticationConfiguration>(
@@ -105,19 +113,98 @@ builder.Services.AddHostedService<SessionCleanupService>();
 
 // Add Authentication
 var useDevAuth = builder.Configuration.GetValue<bool>("Auth:UseDevAuth");
-if (useDevAuth)
+if (!builder.Environment.IsEnvironment("Testing"))
 {
-    builder.Services.AddAuthentication("DevAuth")
-        .AddScheme<AuthenticationSchemeOptions, DevAuthHandler>("DevAuth", options => { });
-}
-else
-{
-    builder.Services.AddAuthentication("ProductionAuth")
-        .AddScheme<AuthenticationSchemeOptions, ProductionAuthHandler>("ProductionAuth", options => { });
+    // Only add authentication for non-testing environments
+    // Testing environment authentication is configured in CustomWebAppFactory
+    if (useDevAuth)
+    {
+        builder.Services.AddAuthentication("DevAuth")
+            .AddScheme<AuthenticationSchemeOptions, DevAuthHandler>("DevAuth", options => { });
+    }
+    else
+    {
+        builder.Services.AddAuthentication("ProductionAuth")
+            .AddScheme<AuthenticationSchemeOptions, ProductionAuthHandler>("ProductionAuth", options => { });
+    }
 }
 
 // Add Authorization
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    // Role-based policies
+    options.AddPolicy("StudentOnly", policy => 
+        policy.RequireRole("Student"));
+    
+    options.AddPolicy("ParentOnly", policy => 
+        policy.RequireRole("Parent"));
+    
+    options.AddPolicy("TeacherOnly", policy => 
+        policy.RequireRole("Teacher"));
+    
+    options.AddPolicy("SchoolAdminOnly", policy => 
+        policy.RequireRole("SchoolAdmin"));
+    
+    options.AddPolicy("SystemAdminOnly", policy => 
+        policy.RequireRole("SystemAdmin"));
+    
+    // Hierarchical policies
+    options.AddPolicy("TeacherOrAdmin", policy => 
+        policy.RequireRole("Teacher", "SchoolAdmin", "SystemAdmin"));
+    
+    options.AddPolicy("AdminOnly", policy => 
+        policy.RequireRole("SchoolAdmin", "SystemAdmin"));
+    
+    // Resource-based policies
+    options.AddPolicy("StudentAccess", policy => 
+        policy.Requirements.Add(new StudentAccessRequirement()));
+    
+    options.AddPolicy("FacultyAccess", policy => 
+        policy.Requirements.Add(new FacultyAccessRequirement()));
+    
+    options.AddPolicy("FeeAccess", policy => 
+        policy.Requirements.Add(new FeeAccessRequirement()));
+    
+    options.AddPolicy("PerformanceAccess", policy => 
+        policy.Requirements.Add(new PerformanceAccessRequirement()));
+});
+
+// Add Authorization Handlers
+builder.Services.AddScoped<IAuthorizationHandler, StudentResourceAuthorizationHandler>();
+builder.Services.AddScoped<IAuthorizationHandler, FacultyResourceAuthorizationHandler>();
+builder.Services.AddScoped<IAuthorizationHandler, FeeResourceAuthorizationHandler>();
+builder.Services.AddScoped<IAuthorizationHandler, PerformanceResourceAuthorizationHandler>();
+
+// Validate Authentication Configuration
+var authConfig = builder.Configuration.GetSection("Authentication").Get<EduShield.Core.Configuration.AuthenticationConfiguration>();
+if (authConfig != null && !useDevAuth)
+{
+    // Validate required configuration for production
+    if (authConfig.Providers?.ContainsKey("Google") == true)
+    {
+        var googleConfig = authConfig.Providers["Google"];
+        if (string.IsNullOrEmpty(googleConfig.ClientId) || string.IsNullOrEmpty(googleConfig.ClientSecret))
+        {
+            throw new InvalidOperationException("Google OAuth configuration is incomplete. ClientId and ClientSecret are required.");
+        }
+    }
+    
+    if (authConfig.Providers?.ContainsKey("Microsoft") == true)
+    {
+        var microsoftConfig = authConfig.Providers["Microsoft"];
+        if (string.IsNullOrEmpty(microsoftConfig.ClientId) || string.IsNullOrEmpty(microsoftConfig.ClientSecret))
+        {
+            throw new InvalidOperationException("Microsoft OAuth configuration is incomplete. ClientId and ClientSecret are required.");
+        }
+    }
+}
+
+// Configure secure cookie settings based on environment
+if (authConfig != null)
+{
+    authConfig.RequireSecureCookies = builder.Environment.IsProduction();
+    authConfig.EnableDevelopmentBypass = builder.Environment.IsDevelopment();
+}
 
 // Consistent 400 shape for model validation errors
 builder.Services.Configure<ApiBehaviorOptions>(options =>
@@ -150,6 +237,27 @@ var healthChecks = builder.Services.AddHealthChecks();
 if (!builder.Environment.IsEnvironment("Testing"))
 {
     healthChecks.AddDbContextCheck<EduShieldDbContext>();
+    
+    // Add authentication health checks
+    if (!useDevAuth && authConfig?.Providers != null)
+    {
+        foreach (var provider in authConfig.Providers)
+        {
+            healthChecks.AddCheck($"auth-{provider.Key.ToLower()}", () => 
+            {
+                // Basic configuration validation
+                if (string.IsNullOrEmpty(provider.Value.ClientId) || 
+                    string.IsNullOrEmpty(provider.Value.Authority))
+                {
+                    return Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Unhealthy(
+                        $"{provider.Key} authentication provider is not properly configured");
+                }
+                
+                return Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy(
+                    $"{provider.Key} authentication provider is configured");
+            });
+        }
+    }
 }
 
 // Add CORS
@@ -208,6 +316,9 @@ if (!app.Environment.IsEnvironment("Testing"))
 
 app.UseGlobalProblemDetails();
 app.UseMiddleware<CorrelationMiddleware>();
+app.UseMiddleware<SecurityHeadersMiddleware>();
+app.UseMiddleware<RateLimitingMiddleware>();
+app.UseMiddleware<GlobalExceptionMiddleware>();
 app.UseSerilogRequestLogging();
 app.UseRateLimiter();
 app.UseResponseCompression();
@@ -250,6 +361,13 @@ app.Use(async (context, next) =>
 });
 
 app.UseAuthentication();
+
+// Add JWT validation middleware for production auth (skip in testing)
+if (!useDevAuth && !app.Environment.IsEnvironment("Testing"))
+{
+    app.UseMiddleware<JwtValidationMiddleware>();
+}
+
 app.UseAuthorization();
 
 app.MapControllers();

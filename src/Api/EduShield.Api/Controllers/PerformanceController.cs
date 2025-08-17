@@ -7,19 +7,25 @@ namespace EduShield.Api.Controllers;
 
 [ApiController]
 [Route("api/v1/performance")]
+[Authorize]
 public class PerformanceController : ControllerBase
 {
     private readonly IPerformanceService _performanceService;
+    private readonly IAuthorizationService _authorizationService;
     private readonly ILogger<PerformanceController> _logger;
 
-    public PerformanceController(IPerformanceService performanceService, ILogger<PerformanceController> logger)
+    public PerformanceController(
+        IPerformanceService performanceService, 
+        IAuthorizationService authorizationService,
+        ILogger<PerformanceController> logger)
     {
         _performanceService = performanceService;
+        _authorizationService = authorizationService;
         _logger = logger;
     }
 
     [HttpPost]
-    [Authorize]
+    [Authorize(Policy = "TeacherOrAdmin")]
     public async Task<ActionResult<Guid>> Create([FromBody] CreatePerformanceReq request, CancellationToken cancellationToken)
     {
         try
@@ -41,7 +47,6 @@ public class PerformanceController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
-    [AllowAnonymous]
     public async Task<ActionResult<PerformanceDto>> Get(Guid id, CancellationToken cancellationToken)
     {
         try
@@ -49,6 +54,13 @@ public class PerformanceController : ControllerBase
             var performance = await _performanceService.GetAsync(id, cancellationToken);
             if (performance == null)
                 return NotFound();
+
+            // Check if user has access to this performance record
+            var authResult = await _authorizationService.AuthorizeAsync(User, performance, "PerformanceAccess");
+            if (!authResult.Succeeded)
+            {
+                return Forbid();
+            }
 
             return Ok(performance);
         }
@@ -60,13 +72,25 @@ public class PerformanceController : ControllerBase
     }
 
     [HttpGet]
-    [AllowAnonymous]
+    [Authorize(Policy = "TeacherOrAdmin")]
     public async Task<ActionResult<IEnumerable<PerformanceDto>>> GetAll(CancellationToken cancellationToken)
     {
         try
         {
             var performances = await _performanceService.GetAllAsync(cancellationToken);
-            return Ok(performances);
+            
+            // Filter performances based on user's access level
+            var filteredPerformances = new List<PerformanceDto>();
+            foreach (var performance in performances)
+            {
+                var authResult = await _authorizationService.AuthorizeAsync(User, performance, "PerformanceAccess");
+                if (authResult.Succeeded)
+                {
+                    filteredPerformances.Add(performance);
+                }
+            }
+
+            return Ok(filteredPerformances);
         }
         catch (Exception ex)
         {
@@ -76,13 +100,24 @@ public class PerformanceController : ControllerBase
     }
 
     [HttpGet("student/{studentId:guid}")]
-    [AllowAnonymous]
     public async Task<ActionResult<IEnumerable<PerformanceDto>>> GetByStudent(Guid studentId, CancellationToken cancellationToken)
     {
         try
         {
             var performances = await _performanceService.GetByStudentIdAsync(studentId, cancellationToken);
-            return Ok(performances);
+            
+            // Filter performances based on user's access level
+            var filteredPerformances = new List<PerformanceDto>();
+            foreach (var performance in performances)
+            {
+                var authResult = await _authorizationService.AuthorizeAsync(User, performance, "PerformanceAccess");
+                if (authResult.Succeeded)
+                {
+                    filteredPerformances.Add(performance);
+                }
+            }
+
+            return Ok(filteredPerformances);
         }
         catch (Exception ex)
         {
@@ -108,7 +143,7 @@ public class PerformanceController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
-    [Authorize]
+    [Authorize(Policy = "TeacherOrAdmin")]
     public async Task<ActionResult> Update(Guid id, [FromBody] CreatePerformanceReq request, CancellationToken cancellationToken)
     {
         try
@@ -133,7 +168,7 @@ public class PerformanceController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    [Authorize]
+    [Authorize(Policy = "SchoolAdminOnly")]
     public async Task<ActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
         try

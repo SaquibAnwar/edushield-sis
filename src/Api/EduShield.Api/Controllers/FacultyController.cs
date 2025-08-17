@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using EduShield.Core.Dtos;
 using EduShield.Core.Interfaces;
 
@@ -6,18 +7,25 @@ namespace EduShield.Api.Controllers;
 
 [ApiController]
 [Route("api/v1/faculty")]
+[Authorize]
 public class FacultyController : ControllerBase
 {
     private readonly IFacultyService _facultyService;
+    private readonly IAuthorizationService _authorizationService;
     private readonly ILogger<FacultyController> _logger;
 
-    public FacultyController(IFacultyService facultyService, ILogger<FacultyController> logger)
+    public FacultyController(
+        IFacultyService facultyService, 
+        IAuthorizationService authorizationService,
+        ILogger<FacultyController> logger)
     {
         _facultyService = facultyService;
+        _authorizationService = authorizationService;
         _logger = logger;
     }
 
     [HttpPost]
+    [Authorize(Policy = "SchoolAdminOnly")]
     public async Task<ActionResult<Guid>> Create([FromBody] CreateFacultyReq request, CancellationToken cancellationToken)
     {
         try
@@ -42,6 +50,13 @@ public class FacultyController : ControllerBase
             if (faculty == null)
                 return NotFound();
 
+            // Check if user has access to this faculty record
+            var authResult = await _authorizationService.AuthorizeAsync(User, faculty, "FacultyAccess");
+            if (!authResult.Succeeded)
+            {
+                return Forbid();
+            }
+
             return Ok(faculty);
         }
         catch (Exception ex)
@@ -52,12 +67,25 @@ public class FacultyController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Policy = "TeacherOrAdmin")]
     public async Task<ActionResult<IEnumerable<FacultyDto>>> GetAll(CancellationToken cancellationToken)
     {
         try
         {
             var faculties = await _facultyService.GetAllAsync(cancellationToken);
-            return Ok(faculties);
+            
+            // Filter faculties based on user's access level
+            var filteredFaculties = new List<FacultyDto>();
+            foreach (var faculty in faculties)
+            {
+                var authResult = await _authorizationService.AuthorizeAsync(User, faculty, "FacultyAccess");
+                if (authResult.Succeeded)
+                {
+                    filteredFaculties.Add(faculty);
+                }
+            }
+
+            return Ok(filteredFaculties);
         }
         catch (Exception ex)
         {
@@ -67,6 +95,7 @@ public class FacultyController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
+    [Authorize(Policy = "SchoolAdminOnly")]
     public async Task<ActionResult> Update(Guid id, [FromBody] CreateFacultyReq request, CancellationToken cancellationToken)
     {
         try
@@ -86,6 +115,7 @@ public class FacultyController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
+    [Authorize(Policy = "SchoolAdminOnly")]
     public async Task<ActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
         try

@@ -10,15 +10,22 @@ namespace EduShield.Api.Controllers;
 
 [ApiController]
 [Route("api/v1/fees")]
+[Authorize]
 public class FeeController : ControllerBase
 {
     private readonly IFeeService _feeService;
+    private readonly IAuthorizationService _authorizationService;
     private readonly ILogger<FeeController> _logger;
     private readonly IWebHostEnvironment _environment;
 
-    public FeeController(IFeeService feeService, ILogger<FeeController> logger, IWebHostEnvironment environment)
+    public FeeController(
+        IFeeService feeService, 
+        IAuthorizationService authorizationService,
+        ILogger<FeeController> logger, 
+        IWebHostEnvironment environment)
     {
         _feeService = feeService;
+        _authorizationService = authorizationService;
         _logger = logger;
         _environment = environment;
     }
@@ -27,7 +34,7 @@ public class FeeController : ControllerBase
     /// Get all fees
     /// </summary>
     [HttpGet]
-    [Authorize]
+    [Authorize(Policy = "TeacherOrAdmin")]
     public async Task<ActionResult<IEnumerable<FeeDto>>> GetAllFees(CancellationToken cancellationToken)
     {
         try
@@ -46,7 +53,6 @@ public class FeeController : ControllerBase
     /// Get fee by ID
     /// </summary>
     [HttpGet("{id:guid}")]
-    [Authorize]
     public async Task<ActionResult<FeeDto>> GetFeeById(Guid id, CancellationToken cancellationToken)
     {
         try
@@ -56,6 +62,14 @@ public class FeeController : ControllerBase
             {
                 return NotFound($"Fee with ID '{id}' was not found");
             }
+
+            // Check if user has access to this fee
+            var authResult = await _authorizationService.AuthorizeAsync(User, fee, "FeeAccess");
+            if (!authResult.Succeeded)
+            {
+                return Forbid();
+            }
+
             return Ok(fee);
         }
         catch (FeeNotFoundException)
@@ -73,13 +87,24 @@ public class FeeController : ControllerBase
     /// Get fees by student ID
     /// </summary>
     [HttpGet("student/{studentId:guid}")]
-    [Authorize]
     public async Task<ActionResult<IEnumerable<FeeDto>>> GetFeesByStudentId(Guid studentId, CancellationToken cancellationToken)
     {
         try
         {
             var fees = await _feeService.GetFeesByStudentIdAsync(studentId, cancellationToken);
-            return Ok(fees);
+            
+            // Filter fees based on user's access level
+            var filteredFees = new List<FeeDto>();
+            foreach (var fee in fees)
+            {
+                var authResult = await _authorizationService.AuthorizeAsync(User, fee, "FeeAccess");
+                if (authResult.Succeeded)
+                {
+                    filteredFees.Add(fee);
+                }
+            }
+
+            return Ok(filteredFees);
         }
         catch (Exception ex)
         {
@@ -149,7 +174,7 @@ public class FeeController : ControllerBase
     /// Create a new fee
     /// </summary>
     [HttpPost]
-    [Authorize]
+    [Authorize(Policy = "TeacherOrAdmin")]
     public async Task<ActionResult<Guid>> CreateFee([FromBody] CreateFeeReq request, CancellationToken cancellationToken)
     {
         if (!ModelState.IsValid)
@@ -194,7 +219,7 @@ public class FeeController : ControllerBase
     /// Update an existing fee
     /// </summary>
     [HttpPut("{id:guid}")]
-    [Authorize]
+    [Authorize(Policy = "TeacherOrAdmin")]
     public async Task<ActionResult> UpdateFee(Guid id, [FromBody] UpdateFeeReq request, CancellationToken cancellationToken)
     {
         if (!ModelState.IsValid)
@@ -233,7 +258,7 @@ public class FeeController : ControllerBase
     /// Delete a fee
     /// </summary>
     [HttpDelete("{id:guid}")]
-    [Authorize]
+    [Authorize(Policy = "SchoolAdminOnly")]
     public async Task<ActionResult> DeleteFee(Guid id, CancellationToken cancellationToken)
     {
         try

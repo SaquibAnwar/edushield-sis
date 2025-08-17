@@ -132,6 +132,109 @@ public class AuthCallbackHandler
         }
     }
 
+    public async Task<AuthResult> HandleMicrosoftCallbackAsync(string idToken, string ipAddress, string userAgent, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            // Validate and parse the ID token
+            var userInfo = await ValidateMicrosoftTokenAsync(idToken, cancellationToken);
+            if (userInfo == null)
+            {
+                await _auditService.LogAuthenticationAsync(null, "MicrosoftCallback", false, "Invalid ID token", ipAddress, userAgent, cancellationToken);
+                return new AuthResult { Success = false, ErrorMessage = "Invalid token" };
+            }
+
+            // Get or create user
+            var user = await _authService.GetOrCreateUserAsync(userInfo, cancellationToken);
+            
+            // Validate user is active
+            if (!await _authService.ValidateUserAsync(user.UserId, cancellationToken))
+            {
+                await _auditService.LogAuthenticationAsync(user.UserId, "MicrosoftCallback", false, "User account is deactivated", ipAddress, userAgent, cancellationToken);
+                return new AuthResult { Success = false, ErrorMessage = "Account is deactivated" };
+            }
+
+            // Create session
+            var session = await _authService.CreateSessionAsync(user.UserId, ipAddress, userAgent, cancellationToken);
+
+            // Log successful authentication
+            await _auditService.LogAuthenticationAsync(user.UserId, "MicrosoftCallback", true, null, ipAddress, userAgent, cancellationToken);
+
+            return new AuthResult
+            {
+                Success = true,
+                User = new UserDto
+                {
+                    UserId = user.UserId,
+                    Email = user.Email,
+                    FirstName = user.FirstName,
+                    LastName = user.LastName,
+                    FullName = user.FullName,
+                    Provider = user.Provider,
+                    Role = user.Role,
+                    IsActive = user.IsActive,
+                    LastLoginAt = user.LastLoginAt,
+                    ProfilePictureUrl = user.ProfilePictureUrl,
+                    CreatedAt = user.CreatedAt,
+                    UpdatedAt = user.UpdatedAt
+                },
+                SessionToken = session.SessionToken,
+                ExpiresAt = session.ExpiresAt
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error handling Microsoft callback");
+            await _auditService.LogAuthenticationAsync(null, "MicrosoftCallback", false, ex.Message, ipAddress, userAgent, cancellationToken);
+            return new AuthResult { Success = false, ErrorMessage = "Authentication failed" };
+        }
+    }
+
+    private async Task<ExternalUserInfo?> ValidateMicrosoftTokenAsync(string idToken, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var handler = new JwtSecurityTokenHandler();
+            
+            // For development, we'll do basic parsing without full validation
+            // In production, you should validate the token signature against Microsoft's public keys
+            var jsonToken = handler.ReadJwtToken(idToken);
+
+            // Basic validation
+            if (jsonToken.ValidTo < DateTime.UtcNow)
+            {
+                _logger.LogWarning("Token has expired");
+                return null;
+            }
+
+            // Extract user information
+            var userInfo = new ExternalUserInfo
+            {
+                ExternalId = jsonToken.Claims.FirstOrDefault(c => c.Type == "sub")?.Value ?? string.Empty,
+                Email = jsonToken.Claims.FirstOrDefault(c => c.Type == "email")?.Value ?? string.Empty,
+                FirstName = jsonToken.Claims.FirstOrDefault(c => c.Type == "given_name")?.Value ?? string.Empty,
+                LastName = jsonToken.Claims.FirstOrDefault(c => c.Type == "family_name")?.Value ?? string.Empty,
+                ProfilePictureUrl = jsonToken.Claims.FirstOrDefault(c => c.Type == "picture")?.Value,
+                Provider = AuthProvider.Microsoft,
+                Claims = jsonToken.Claims.ToDictionary(c => c.Type, c => c.Value)
+            };
+
+            // Validate required fields
+            if (string.IsNullOrEmpty(userInfo.ExternalId) || string.IsNullOrEmpty(userInfo.Email))
+            {
+                _logger.LogWarning("Token missing required claims");
+                return null;
+            }
+
+            return userInfo;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error validating Microsoft token");
+            return null;
+        }
+    }
+
     public CookieOptions CreateAuthCookie()
     {
         return new CookieOptions

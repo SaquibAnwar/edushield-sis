@@ -76,6 +76,11 @@ public static class RoleHierarchy
             .ToArray();
     }
 
+    public static int GetHierarchyLevel(UserRole role)
+    {
+        return GetRoleLevel(role);
+    }
+
     private static int GetRoleLevel(UserRole role)
     {
         return RoleHierarchyLevels.TryGetValue(role, out var level) ? level : 0;

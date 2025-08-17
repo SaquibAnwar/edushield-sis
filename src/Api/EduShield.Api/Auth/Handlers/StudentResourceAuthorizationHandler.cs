@@ -31,12 +31,23 @@ public class StudentResourceAuthorizationHandler : AuthorizationHandler<StudentA
         var userIdClaim = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         var userRoleClaim = context.User.FindFirst(ClaimTypes.Role)?.Value;
 
-        if (!Guid.TryParse(userIdClaim, out var userId) || !Enum.TryParse<UserRole>(userRoleClaim, out var userRole))
+        if (!Guid.TryParse(userIdClaim, out var userId))
         {
-            await LogAuthorizationFailure(null, "Student", "InvalidClaims");
+            _logger.LogWarning("Failed to parse user ID: {UserIdClaim}", userIdClaim);
+            await LogAuthorizationFailure(null, "Student", "InvalidUserId");
             context.Fail();
             return;
         }
+
+        if (!Enum.TryParse<UserRole>(userRoleClaim, out var userRole))
+        {
+            _logger.LogWarning("Failed to parse user role: {UserRoleClaim}", userRoleClaim);
+            await LogAuthorizationFailure(userId, "Student", "InvalidRole");
+            context.Fail();
+            return;
+        }
+
+        _logger.LogInformation("Authorization check for user {UserId} with role {UserRole}", userId, userRole);
 
         try
         {

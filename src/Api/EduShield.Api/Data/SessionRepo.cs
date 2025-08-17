@@ -71,4 +71,9 @@ public class SessionRepo : ISessionRepo
             .Where(s => s.IsActive && s.ExpiresAt <= DateTime.UtcNow)
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<IEnumerable<UserSession>> GetActiveByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        return await GetByUserIdAsync(userId, true, cancellationToken);
+    }
 }

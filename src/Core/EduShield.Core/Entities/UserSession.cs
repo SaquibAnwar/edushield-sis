@@ -16,4 +16,8 @@ public class UserSession : AuditableEntity
     // Computed properties
     public bool IsExpired => DateTime.UtcNow > ExpiresAt;
     public bool IsValid => IsActive && !IsExpired;
+    
+    // Legacy properties for backward compatibility
+    public Guid Id => SessionId;
+    public string Token => SessionToken;
 }

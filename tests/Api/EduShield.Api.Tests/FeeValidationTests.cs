@@ -154,12 +154,15 @@ public class FeeValidationTests
         // Arrange
         var validator = new PaymentBusinessValidator();
         var fee = new Fee
-        {
-            FeeId = Guid.NewGuid(),
-            Amount = 1000m,
-            PaidAmount = 600m,
-            Status = FeeStatus.PartiallyPaid
-        };
+            {
+                FeeId = Guid.NewGuid(),
+                StudentId = Guid.NewGuid(),
+                Amount = 100.00m,
+                FeeType = FeeType.Tuition,
+                Description = "Test Fee",
+                DueDate = DateTime.UtcNow.AddDays(30),
+                CreatedAt = DateTime.UtcNow
+            };
         var paymentRequest = new PaymentReq
         {
             Amount = 500m, // Exceeds outstanding amount of 400m
@@ -185,12 +188,15 @@ public class FeeValidationTests
         // Arrange
         var validator = new UpdateFeeBusinessValidator();
         var fee = new Fee
-        {
-            FeeId = Guid.NewGuid(),
-            Amount = 1000m,
-            PaidAmount = 1000m,
-            Status = FeeStatus.Paid
-        };
+            {
+                FeeId = Guid.NewGuid(),
+                StudentId = Guid.NewGuid(),
+                Amount = 100.00m,
+                FeeType = FeeType.Tuition,
+                Description = "Test Fee",
+                DueDate = DateTime.UtcNow.AddDays(30),
+                CreatedAt = DateTime.UtcNow
+            };
         var updateRequest = new UpdateFeeReq
         {
             FeeType = FeeType.Tuition,
@@ -210,4 +216,5 @@ public class FeeValidationTests
         // Assert
         result.ShouldHaveValidationErrorFor(x => x.Fee.Status);
     }
+
 }

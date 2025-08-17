@@ -75,10 +75,8 @@ public class PerformanceServiceTests
 
         var faculty = new Faculty(facultyId, "Dr. Smith", "Mathematics", "Algebra", Gender.M);
 
-        _mockStudentRepo.Setup(x => x.GetByIdAsync(studentId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(student);
-        _mockFacultyRepo.Setup(x => x.GetByIdAsync(facultyId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(faculty);
+        _mockStudentRepo.Setup(x => x.GetByIdAsync(It.IsAny<CancellationToken>())).ReturnsAsync(student);
+        _mockFacultyRepo.Setup(x => x.GetByIdAsync(It.IsAny<CancellationToken>())).ReturnsAsync(faculty);
         _mockPerformanceRepo.Setup(x => x.CreateAsync(It.IsAny<Performance>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Performance p, CancellationToken ct) => p);
 
@@ -142,8 +140,7 @@ public class PerformanceServiceTests
             UpdatedAt = DateTime.UtcNow
         };
 
-        _mockStudentRepo.Setup(x => x.GetByIdAsync(studentId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(student);
+        _mockStudentRepo.Setup(x => x.GetByIdAsync(It.IsAny<CancellationToken>())).ReturnsAsync(student);
         _mockFacultyRepo.Setup(x => x.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Faculty?)null);
 
@@ -167,8 +164,7 @@ public class PerformanceServiceTests
             DateTime.UtcNow.AddDays(-1)
         );
 
-        _mockPerformanceRepo.Setup(x => x.GetByIdAsync(performanceId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(performance);
+        _mockPerformanceRepo.Setup(x => x.GetByIdAsync(It.IsAny<CancellationToken>())).ReturnsAsync(performance);
 
         // Act
         var result = await _service.GetAsync(performanceId);
@@ -225,8 +221,7 @@ public class PerformanceServiceTests
             new(Guid.NewGuid(), studentId, Guid.NewGuid(), "Math", 85m, 100m, DateTime.UtcNow.AddDays(-1))
         };
 
-        _mockPerformanceRepo.Setup(x => x.GetByStudentIdAsync(studentId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(performances);
+        _mockPerformanceRepo.Setup(x => x.GetByStudentIdAsync(It.IsAny<CancellationToken>())).ReturnsAsync(performances);
 
         // Act
         var result = await _service.GetByStudentIdAsync(studentId);
@@ -246,8 +241,7 @@ public class PerformanceServiceTests
             new(Guid.NewGuid(), Guid.NewGuid(), facultyId, "Math", 85m, 100m, DateTime.UtcNow.AddDays(-1))
         };
 
-        _mockPerformanceRepo.Setup(x => x.GetByFacultyIdAsync(facultyId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(performances);
+        _mockPerformanceRepo.Setup(x => x.GetByFacultyIdAsync(It.IsAny<CancellationToken>())).ReturnsAsync(performances);
 
         // Act
         var result = await _service.GetByFacultyIdAsync(facultyId);
@@ -292,10 +286,8 @@ public class PerformanceServiceTests
         var faculty = new Faculty(facultyId, "Dr. Smith", "Mathematics", "Algebra", Gender.M);
         var updatedPerformance = new Performance(performanceId, studentId, facultyId, "Updated Math", 95m, 100m, DateTime.UtcNow.AddDays(-1));
 
-        _mockStudentRepo.Setup(x => x.GetByIdAsync(studentId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(student);
-        _mockFacultyRepo.Setup(x => x.GetByIdAsync(facultyId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(faculty);
+        _mockStudentRepo.Setup(x => x.GetByIdAsync(It.IsAny<CancellationToken>())).ReturnsAsync(student);
+        _mockFacultyRepo.Setup(x => x.GetByIdAsync(It.IsAny<CancellationToken>())).ReturnsAsync(faculty);
         _mockPerformanceRepo.Setup(x => x.UpdateAsync(It.IsAny<Performance>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(updatedPerformance);
 
@@ -340,10 +332,8 @@ public class PerformanceServiceTests
 
         var faculty = new Faculty(facultyId, "Dr. Smith", "Mathematics", "Algebra", Gender.M);
 
-        _mockStudentRepo.Setup(x => x.GetByIdAsync(studentId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(student);
-        _mockFacultyRepo.Setup(x => x.GetByIdAsync(facultyId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(faculty);
+        _mockStudentRepo.Setup(x => x.GetByIdAsync(It.IsAny<CancellationToken>())).ReturnsAsync(student);
+        _mockFacultyRepo.Setup(x => x.GetByIdAsync(It.IsAny<CancellationToken>())).ReturnsAsync(faculty);
         _mockPerformanceRepo.Setup(x => x.UpdateAsync(It.IsAny<Performance>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Performance?)null);
 
@@ -359,8 +349,7 @@ public class PerformanceServiceTests
     {
         // Arrange
         var performanceId = Guid.NewGuid();
-        _mockPerformanceRepo.Setup(x => x.DeleteAsync(performanceId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
+        _mockPerformanceRepo.Setup(x => x.DeleteAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
         // Act
         var result = await _service.DeleteAsync(performanceId);
@@ -374,8 +363,7 @@ public class PerformanceServiceTests
     {
         // Arrange
         var performanceId = Guid.NewGuid();
-        _mockPerformanceRepo.Setup(x => x.DeleteAsync(performanceId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(false);
+        _mockPerformanceRepo.Setup(x => x.DeleteAsync(It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
         // Act
         var result = await _service.DeleteAsync(performanceId);
@@ -383,4 +371,5 @@ public class PerformanceServiceTests
         // Assert
         Assert.That(result, Is.False);
     }
+
 }

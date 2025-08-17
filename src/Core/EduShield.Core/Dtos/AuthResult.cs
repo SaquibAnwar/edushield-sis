@@ -8,4 +8,7 @@ public class AuthResult
     public string? SessionToken { get; set; }
     public DateTime? ExpiresAt { get; set; }
     public bool IsNewUser { get; set; }
+    
+    // Legacy property for backward compatibility
+    public bool IsSuccess => Success;
 }

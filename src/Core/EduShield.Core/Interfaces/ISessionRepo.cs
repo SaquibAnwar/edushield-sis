@@ -11,4 +11,5 @@ public interface ISessionRepo
     Task<bool> DeleteAsync(Guid sessionId, CancellationToken cancellationToken = default);
     Task<IEnumerable<UserSession>> GetByUserIdAsync(Guid userId, bool activeOnly = true, CancellationToken cancellationToken = default);
     Task<IEnumerable<UserSession>> GetExpiredSessionsAsync(CancellationToken cancellationToken = default);
+    Task<IEnumerable<UserSession>> GetActiveByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
 }

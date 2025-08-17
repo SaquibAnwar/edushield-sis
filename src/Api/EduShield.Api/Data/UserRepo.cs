@@ -72,6 +72,27 @@ public class UserRepo : IUserRepo
         return await query.ToListAsync(cancellationToken);
     }
 
+    public async Task<IEnumerable<User>> GetAllAsync(int page, int pageSize, UserRole? role = null, bool? isActive = null, CancellationToken cancellationToken = default)
+    {
+        var query = _context.Users.AsQueryable();
+        
+        if (role.HasValue)
+        {
+            query = query.Where(u => u.Role == role.Value);
+        }
+
+        if (isActive.HasValue)
+        {
+            query = query.Where(u => u.IsActive == isActive.Value);
+        }
+
+        return await query
+            .OrderBy(u => u.Email)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<Student?> GetStudentByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         return await _context.Students
@@ -82,5 +103,12 @@ public class UserRepo : IUserRepo
     {
         return await _context.Faculty
             .FirstOrDefaultAsync(f => f.UserId == userId, cancellationToken);
+    }
+
+    public async Task<IEnumerable<User>> GetByRoleAsync(UserRole role, CancellationToken cancellationToken = default)
+    {
+        return await _context.Users
+            .Where(u => u.Role == role)
+            .ToListAsync(cancellationToken);
     }
 }

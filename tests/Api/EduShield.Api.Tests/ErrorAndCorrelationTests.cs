@@ -47,8 +47,5 @@ public class ErrorAndCorrelationTests
         Assert.That(problem!.Status, Is.EqualTo(400));
         Assert.That(problem.Extensions.ContainsKey("traceId"), Is.True);
     }
+
 }
-
-
-
-

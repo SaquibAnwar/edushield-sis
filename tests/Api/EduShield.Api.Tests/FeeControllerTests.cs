@@ -6,6 +6,7 @@ using EduShield.Core.Dtos;
 using EduShield.Core.Interfaces;
 using EduShield.Core.Enums;
 using EduShield.Api.Controllers;
+using Microsoft.AspNetCore.Authorization;
 
 namespace EduShield.Api.Tests;
 
@@ -13,6 +14,7 @@ namespace EduShield.Api.Tests;
 public class FeeControllerTests
 {
     private readonly Mock<IFeeService> _mockFeeService;
+    private readonly Mock<IAuthorizationService> _mockAuthorizationService;
     private readonly Mock<ILogger<FeeController>> _mockLogger;
     private readonly Mock<IWebHostEnvironment> _mockEnvironment;
     private readonly FeeController _controller;
@@ -22,7 +24,8 @@ public class FeeControllerTests
         _mockFeeService = new Mock<IFeeService>();
         _mockLogger = new Mock<ILogger<FeeController>>();
         _mockEnvironment = new Mock<IWebHostEnvironment>();
-        _controller = new FeeController(_mockFeeService.Object, _mockLogger.Object, _mockEnvironment.Object);
+        _mockAuthorizationService = new Mock<IAuthorizationService>();
+        _controller = new FeeController(_mockFeeService.Object, _mockAuthorizationService.Object, _mockLogger.Object, _mockEnvironment.Object);
     }
 
     [SetUp]
@@ -55,8 +58,8 @@ public class FeeControllerTests
         var result = await _controller.GetAllFees(CancellationToken.None);
 
         // Assert
-        Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
-        var okResult = result.Result as OkObjectResult;
+        Assert.That(result, Is.InstanceOf<OkObjectResult>());
+        var okResult = result as OkObjectResult;
         var returnedFees = okResult?.Value as IEnumerable<FeeDto>;
         Assert.That(returnedFees?.Count(), Is.EqualTo(2));
     }
@@ -72,8 +75,8 @@ public class FeeControllerTests
         var result = await _controller.GetAllFees(CancellationToken.None);
 
         // Assert
-        Assert.That(result.Result, Is.InstanceOf<ObjectResult>());
-        var statusResult = (ObjectResult)result.Result;
+        Assert.That(result, Is.InstanceOf<ObjectResult>());
+        var statusResult = (ObjectResult)result;
         Assert.That(statusResult.StatusCode, Is.EqualTo(500));
     }
 
@@ -95,15 +98,18 @@ public class FeeControllerTests
             PaidAmount = 500m,
             OutstandingAmount = 500m
         };
-        _mockFeeService.Setup(x => x.GetFeeByIdAsync(feeId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(fee);
+        _mockFeeService.Setup(x => x.GetFeeByIdAsync(It.IsAny<CancellationToken>())).ReturnsAsync(fee);
+        
+        // Setup authorization to succeed
+        _mockAuthorizationService.Setup(x => x.AuthorizeAsync(It.IsAny<System.Security.Claims.ClaimsPrincipal>(), It.IsAny<object>(), It.IsAny<string>()))
+            .ReturnsAsync(AuthorizationResult.Success());
 
         // Act
         var result = await _controller.GetFeeById(feeId, CancellationToken.None);
 
         // Assert
-        Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
-        var okResult = (OkObjectResult)result.Result;
+        Assert.That(result, Is.InstanceOf<OkObjectResult>());
+        var okResult = (OkObjectResult)result;
         var returnedFee = (FeeDto)okResult.Value;
         Assert.That(returnedFee.FeeId, Is.EqualTo(feeId));
     }
@@ -113,14 +119,14 @@ public class FeeControllerTests
     {
         // Arrange
         var feeId = Guid.NewGuid();
-        _mockFeeService.Setup(x => x.GetFeeByIdAsync(feeId, It.IsAny<CancellationToken>()))
+        _mockFeeService.Setup(x => x.GetFeeByIdAsync(feeId))
             .ReturnsAsync((FeeDto?)null);
 
         // Act
         var result = await _controller.GetFeeById(feeId, CancellationToken.None);
 
         // Assert
-        Assert.That(result.Result, Is.InstanceOf<NotFoundObjectResult>());
+        Assert.That(result, Is.InstanceOf<NotFoundObjectResult>());
     }
 
     [Test]
@@ -128,15 +134,15 @@ public class FeeControllerTests
     {
         // Arrange
         var feeId = Guid.NewGuid();
-        _mockFeeService.Setup(x => x.GetFeeByIdAsync(feeId, It.IsAny<CancellationToken>()))
+        _mockFeeService.Setup(x => x.GetFeeByIdAsync(feeId))
             .ThrowsAsync(new Exception("Service error"));
 
         // Act
         var result = await _controller.GetFeeById(feeId, CancellationToken.None);
 
         // Assert
-        Assert.That(result.Result, Is.InstanceOf<ObjectResult>());
-        var statusResult = (ObjectResult)result.Result;
+        Assert.That(result, Is.InstanceOf<ObjectResult>());
+        var statusResult = (ObjectResult)result;
         Assert.That(statusResult.StatusCode, Is.EqualTo(500));
     }
 
@@ -153,15 +159,18 @@ public class FeeControllerTests
         {
             new() { FeeId = Guid.NewGuid(), StudentId = studentId, FeeType = FeeType.Tuition, Amount = 1000m }
         };
-        _mockFeeService.Setup(x => x.GetFeesByStudentIdAsync(studentId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(fees);
+        _mockFeeService.Setup(x => x.GetFeesByStudentIdAsync(It.IsAny<CancellationToken>())).ReturnsAsync(fees);
+        
+        // Setup authorization to succeed
+        _mockAuthorizationService.Setup(x => x.AuthorizeAsync(It.IsAny<System.Security.Claims.ClaimsPrincipal>(), It.IsAny<object>(), It.IsAny<string>()))
+            .ReturnsAsync(AuthorizationResult.Success());
 
         // Act
         var result = await _controller.GetFeesByStudentId(studentId, CancellationToken.None);
 
         // Assert
-        Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
-        var okResult = (OkObjectResult)result.Result;
+        Assert.That(result, Is.InstanceOf<OkObjectResult>());
+        var okResult = (OkObjectResult)result;
         var returnedFees = (IEnumerable<FeeDto>)okResult.Value;
         Assert.That(returnedFees.Count(), Is.EqualTo(1));
         Assert.That(returnedFees.First().StudentId, Is.EqualTo(studentId));
@@ -172,15 +181,15 @@ public class FeeControllerTests
     {
         // Arrange
         var studentId = Guid.NewGuid();
-        _mockFeeService.Setup(x => x.GetFeesByStudentIdAsync(studentId, It.IsAny<CancellationToken>()))
+        _mockFeeService.Setup(x => x.GetFeesByStudentIdAsync(studentId))
             .ThrowsAsync(new Exception("Service error"));
 
         // Act
         var result = await _controller.GetFeesByStudentId(studentId, CancellationToken.None);
 
         // Assert
-        Assert.That(result.Result, Is.InstanceOf<ObjectResult>());
-        var statusResult = (ObjectResult)result.Result;
+        Assert.That(result, Is.InstanceOf<ObjectResult>());
+        var statusResult = (ObjectResult)result;
         Assert.That(statusResult.StatusCode, Is.EqualTo(500));
     }
 
@@ -197,15 +206,14 @@ public class FeeControllerTests
         {
             new() { FeeId = Guid.NewGuid(), StudentId = Guid.NewGuid(), FeeType = feeType, Amount = 1000m }
         };
-        _mockFeeService.Setup(x => x.GetFeesByTypeAsync(feeType, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(fees);
+        _mockFeeService.Setup(x => x.GetFeesByTypeAsync(It.IsAny<CancellationToken>())).ReturnsAsync(fees);
 
         // Act
         var result = await _controller.GetFeesByType(feeType, CancellationToken.None);
 
         // Assert
-        Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
-        var okResult = (OkObjectResult)result.Result;
+        Assert.That(result, Is.InstanceOf<OkObjectResult>());
+        var okResult = (OkObjectResult)result;
         var returnedFees = (IEnumerable<FeeDto>)okResult.Value;
         Assert.That(returnedFees.Count(), Is.EqualTo(1));
         Assert.That(returnedFees.First().FeeType, Is.EqualTo(feeType));
@@ -216,15 +224,15 @@ public class FeeControllerTests
     {
         // Arrange
         var feeType = FeeType.LabFee;
-        _mockFeeService.Setup(x => x.GetFeesByTypeAsync(feeType, It.IsAny<CancellationToken>()))
+        _mockFeeService.Setup(x => x.GetFeesByTypeAsync(feeType))
             .ThrowsAsync(new Exception("Service error"));
 
         // Act
         var result = await _controller.GetFeesByType(feeType, CancellationToken.None);
 
         // Assert
-        Assert.That(result.Result, Is.InstanceOf<ObjectResult>());
-        var statusResult = (ObjectResult)result.Result;
+        Assert.That(result, Is.InstanceOf<ObjectResult>());
+        var statusResult = (ObjectResult)result;
         Assert.That(statusResult.StatusCode, Is.EqualTo(500));
     }
 
@@ -241,15 +249,14 @@ public class FeeControllerTests
         {
             new() { FeeId = Guid.NewGuid(), StudentId = Guid.NewGuid(), Status = status, Amount = 1000m }
         };
-        _mockFeeService.Setup(x => x.GetFeesByStatusAsync(status, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(fees);
+        _mockFeeService.Setup(x => x.GetFeesByStatusAsync(It.IsAny<CancellationToken>())).ReturnsAsync(fees);
 
         // Act
         var result = await _controller.GetFeesByStatus(status, CancellationToken.None);
 
         // Assert
-        Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
-        var okResult = (OkObjectResult)result.Result;
+        Assert.That(result, Is.InstanceOf<OkObjectResult>());
+        var okResult = (OkObjectResult)result;
         var returnedFees = (IEnumerable<FeeDto>)okResult.Value;
         Assert.That(returnedFees.Count(), Is.EqualTo(1));
         Assert.That(returnedFees.First().Status, Is.EqualTo(status));
@@ -260,15 +267,15 @@ public class FeeControllerTests
     {
         // Arrange
         var status = FeeStatus.Overdue;
-        _mockFeeService.Setup(x => x.GetFeesByStatusAsync(status, It.IsAny<CancellationToken>()))
+        _mockFeeService.Setup(x => x.GetFeesByStatusAsync(status))
             .ThrowsAsync(new Exception("Service error"));
 
         // Act
         var result = await _controller.GetFeesByStatus(status, CancellationToken.None);
 
         // Assert
-        Assert.That(result.Result, Is.InstanceOf<ObjectResult>());
-        var statusResult = (ObjectResult)result.Result;
+        Assert.That(result, Is.InstanceOf<ObjectResult>());
+        var statusResult = (ObjectResult)result;
         Assert.That(statusResult.StatusCode, Is.EqualTo(500));
     }
 
@@ -291,8 +298,8 @@ public class FeeControllerTests
         var result = await _controller.GetOverdueFees(CancellationToken.None);
 
         // Assert
-        Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
-        var okResult = (OkObjectResult)result.Result;
+        Assert.That(result, Is.InstanceOf<OkObjectResult>());
+        var okResult = (OkObjectResult)result;
         var returnedFees = (IEnumerable<FeeDto>)okResult.Value;
         Assert.That(returnedFees.Count(), Is.EqualTo(1));
         Assert.That(returnedFees.First().IsOverdue, Is.True);
@@ -309,8 +316,8 @@ public class FeeControllerTests
         var result = await _controller.GetOverdueFees(CancellationToken.None);
 
         // Assert
-        Assert.That(result.Result, Is.InstanceOf<ObjectResult>());
-        var statusResult = (ObjectResult)result.Result;
+        Assert.That(result, Is.InstanceOf<ObjectResult>());
+        var statusResult = (ObjectResult)result;
         Assert.That(statusResult.StatusCode, Is.EqualTo(500));
     }
 
@@ -331,15 +338,14 @@ public class FeeControllerTests
             Description = "Tuition fee for semester"
         };
         var feeId = Guid.NewGuid();
-        _mockFeeService.Setup(x => x.CreateFeeAsync(request, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(feeId);
+        _mockFeeService.Setup(x => x.CreateFeeAsync(It.IsAny<CancellationToken>())).ReturnsAsync(feeId);
 
         // Act
         var result = await _controller.CreateFee(request, CancellationToken.None);
 
         // Assert
-        Assert.That(result.Result, Is.InstanceOf<CreatedAtActionResult>());
-        var createdResult = (CreatedAtActionResult)result.Result;
+        Assert.That(result, Is.InstanceOf<CreatedAtActionResult>());
+        var createdResult = (CreatedAtActionResult)result;
         Assert.That(createdResult.ActionName, Is.EqualTo(nameof(FeeController.GetFeeById)));
         var returnedValue = createdResult.Value;
         Assert.That(returnedValue, Is.Not.Null);
@@ -361,14 +367,14 @@ public class FeeControllerTests
             DueDate = DateTime.UtcNow.AddDays(30),
             Description = "Test fee"
         };
-        _mockFeeService.Setup(x => x.CreateFeeAsync(request, It.IsAny<CancellationToken>()))
+        _mockFeeService.Setup(x => x.CreateFeeAsync(request))
             .ThrowsAsync(new ArgumentException("Student not found"));
 
         // Act
         var result = await _controller.CreateFee(request, CancellationToken.None);
 
         // Assert
-        Assert.That(result.Result, Is.InstanceOf<BadRequestObjectResult>());
+        Assert.That(result, Is.InstanceOf<BadRequestObjectResult>());
     }
 
     [Test]
@@ -383,14 +389,14 @@ public class FeeControllerTests
             DueDate = DateTime.UtcNow.AddDays(30),
             Description = "Test fee"
         };
-        _mockFeeService.Setup(x => x.CreateFeeAsync(request, It.IsAny<CancellationToken>()))
+        _mockFeeService.Setup(x => x.CreateFeeAsync(request))
             .ThrowsAsync(new InvalidOperationException("Business rule violation"));
 
         // Act
         var result = await _controller.CreateFee(request, CancellationToken.None);
 
         // Assert
-        Assert.That(result.Result, Is.InstanceOf<BadRequestObjectResult>());
+        Assert.That(result, Is.InstanceOf<BadRequestObjectResult>());
     }
 
     [Test]
@@ -405,15 +411,15 @@ public class FeeControllerTests
             DueDate = DateTime.UtcNow.AddDays(30),
             Description = "Test fee"
         };
-        _mockFeeService.Setup(x => x.CreateFeeAsync(request, It.IsAny<CancellationToken>()))
+        _mockFeeService.Setup(x => x.CreateFeeAsync(request))
             .ThrowsAsync(new Exception("Service error"));
 
         // Act
         var result = await _controller.CreateFee(request, CancellationToken.None);
 
         // Assert
-        Assert.That(result.Result, Is.InstanceOf<ObjectResult>());
-        var statusResult = (ObjectResult)result.Result;
+        Assert.That(result, Is.InstanceOf<ObjectResult>());
+        var statusResult = (ObjectResult)result;
         Assert.That(statusResult.StatusCode, Is.EqualTo(500));
     }
 
@@ -428,7 +434,7 @@ public class FeeControllerTests
         var result = await _controller.CreateFee(request, CancellationToken.None);
 
         // Assert
-        Assert.That(result.Result, Is.InstanceOf<BadRequestObjectResult>());
+        Assert.That(result, Is.InstanceOf<BadRequestObjectResult>());
     }
 
     #endregion
@@ -447,8 +453,7 @@ public class FeeControllerTests
             DueDate = DateTime.UtcNow.AddDays(30),
             Description = "Updated tuition fee"
         };
-        _mockFeeService.Setup(x => x.UpdateFeeAsync(feeId, request, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
+        _mockFeeService.Setup(x => x.UpdateFeeAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
         // Act
         var result = await _controller.UpdateFee(feeId, request, CancellationToken.None);
@@ -469,8 +474,7 @@ public class FeeControllerTests
             DueDate = DateTime.UtcNow.AddDays(30),
             Description = "Updated fee"
         };
-        _mockFeeService.Setup(x => x.UpdateFeeAsync(feeId, request, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(false);
+        _mockFeeService.Setup(x => x.UpdateFeeAsync(It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
         // Act
         var result = await _controller.UpdateFee(feeId, request, CancellationToken.None);
@@ -491,7 +495,7 @@ public class FeeControllerTests
             DueDate = DateTime.UtcNow.AddDays(30),
             Description = "Updated fee"
         };
-        _mockFeeService.Setup(x => x.UpdateFeeAsync(feeId, request, It.IsAny<CancellationToken>()))
+        _mockFeeService.Setup(x => x.UpdateFeeAsync(feeId, request))
             .ThrowsAsync(new ArgumentException("Invalid fee data"));
 
         // Act
@@ -525,8 +529,7 @@ public class FeeControllerTests
     {
         // Arrange
         var feeId = Guid.NewGuid();
-        _mockFeeService.Setup(x => x.DeleteFeeAsync(feeId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
+        _mockFeeService.Setup(x => x.DeleteFeeAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
         // Act
         var result = await _controller.DeleteFee(feeId, CancellationToken.None);
@@ -540,8 +543,7 @@ public class FeeControllerTests
     {
         // Arrange
         var feeId = Guid.NewGuid();
-        _mockFeeService.Setup(x => x.DeleteFeeAsync(feeId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(false);
+        _mockFeeService.Setup(x => x.DeleteFeeAsync(It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
         // Act
         var result = await _controller.DeleteFee(feeId, CancellationToken.None);
@@ -555,7 +557,7 @@ public class FeeControllerTests
     {
         // Arrange
         var feeId = Guid.NewGuid();
-        _mockFeeService.Setup(x => x.DeleteFeeAsync(feeId, It.IsAny<CancellationToken>()))
+        _mockFeeService.Setup(x => x.DeleteFeeAsync(feeId))
             .ThrowsAsync(new InvalidOperationException("Cannot delete fee with payments"));
 
         // Act
@@ -570,7 +572,7 @@ public class FeeControllerTests
     {
         // Arrange
         var feeId = Guid.NewGuid();
-        _mockFeeService.Setup(x => x.DeleteFeeAsync(feeId, It.IsAny<CancellationToken>()))
+        _mockFeeService.Setup(x => x.DeleteFeeAsync(feeId))
             .ThrowsAsync(new Exception("Service error"));
 
         // Act
@@ -578,7 +580,7 @@ public class FeeControllerTests
 
         // Assert
         Assert.That(result, Is.InstanceOf<ObjectResult>());
-        var statusResult = (ObjectResult)result;
+        var statusResult = result as ObjectResult;
         Assert.That(statusResult.StatusCode, Is.EqualTo(500));
     }
 
@@ -605,15 +607,14 @@ public class FeeControllerTests
             PaymentDate = DateTime.UtcNow,
             PaymentMethod = "Credit Card"
         };
-        _mockFeeService.Setup(x => x.RecordPaymentAsync(feeId, request, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(paymentDto);
+        _mockFeeService.Setup(x => x.RecordPaymentAsync(It.IsAny<CancellationToken>())).ReturnsAsync(paymentDto);
 
         // Act
         var result = await _controller.RecordPayment(feeId, request, CancellationToken.None);
 
         // Assert
-        Assert.That(result.Result, Is.InstanceOf<CreatedAtActionResult>());
-        var createdResult = (CreatedAtActionResult)result.Result;
+        Assert.That(result, Is.InstanceOf<CreatedAtActionResult>());
+        var createdResult = (CreatedAtActionResult)result;
         Assert.That(createdResult.ActionName, Is.EqualTo(nameof(FeeController.GetPaymentsByFeeId)));
         Assert.That(createdResult.Value, Is.EqualTo(paymentDto));
     }
@@ -629,14 +630,14 @@ public class FeeControllerTests
             PaymentDate = DateTime.UtcNow,
             PaymentMethod = "Credit Card"
         };
-        _mockFeeService.Setup(x => x.RecordPaymentAsync(feeId, request, It.IsAny<CancellationToken>()))
+        _mockFeeService.Setup(x => x.RecordPaymentAsync(feeId, request))
             .ThrowsAsync(new ArgumentException("Fee not found"));
 
         // Act
         var result = await _controller.RecordPayment(feeId, request, CancellationToken.None);
 
         // Assert
-        Assert.That(result.Result, Is.InstanceOf<BadRequestObjectResult>());
+        Assert.That(result, Is.InstanceOf<BadRequestObjectResult>());
     }
 
     [Test]
@@ -650,14 +651,14 @@ public class FeeControllerTests
             PaymentDate = DateTime.UtcNow,
             PaymentMethod = "Credit Card"
         };
-        _mockFeeService.Setup(x => x.RecordPaymentAsync(feeId, request, It.IsAny<CancellationToken>()))
+        _mockFeeService.Setup(x => x.RecordPaymentAsync(feeId, request))
             .ThrowsAsync(new InvalidOperationException("Payment exceeds outstanding amount"));
 
         // Act
         var result = await _controller.RecordPayment(feeId, request, CancellationToken.None);
 
         // Assert
-        Assert.That(result.Result, Is.InstanceOf<BadRequestObjectResult>());
+        Assert.That(result, Is.InstanceOf<BadRequestObjectResult>());
     }
 
     [Test]
@@ -672,7 +673,7 @@ public class FeeControllerTests
         var result = await _controller.RecordPayment(feeId, request, CancellationToken.None);
 
         // Assert
-        Assert.That(result.Result, Is.InstanceOf<BadRequestObjectResult>());
+        Assert.That(result, Is.InstanceOf<BadRequestObjectResult>());
     }
 
     [Test]
@@ -686,15 +687,15 @@ public class FeeControllerTests
             PaymentDate = DateTime.UtcNow,
             PaymentMethod = "Credit Card"
         };
-        _mockFeeService.Setup(x => x.RecordPaymentAsync(feeId, request, It.IsAny<CancellationToken>()))
+        _mockFeeService.Setup(x => x.RecordPaymentAsync(feeId, request))
             .ThrowsAsync(new Exception("Service error"));
 
         // Act
         var result = await _controller.RecordPayment(feeId, request, CancellationToken.None);
 
         // Assert
-        Assert.That(result.Result, Is.InstanceOf<ObjectResult>());
-        var statusResult = (ObjectResult)result.Result;
+        Assert.That(result, Is.InstanceOf<ObjectResult>());
+        var statusResult = (ObjectResult)result;
         Assert.That(statusResult.StatusCode, Is.EqualTo(500));
     }
 
@@ -711,15 +712,14 @@ public class FeeControllerTests
         {
             new() { PaymentId = Guid.NewGuid(), FeeId = feeId, Amount = 500m, PaymentMethod = "Credit Card" }
         };
-        _mockFeeService.Setup(x => x.GetPaymentsByFeeIdAsync(feeId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(payments);
+        _mockFeeService.Setup(x => x.GetPaymentsByFeeIdAsync(It.IsAny<CancellationToken>())).ReturnsAsync(payments);
 
         // Act
         var result = await _controller.GetPaymentsByFeeId(feeId, CancellationToken.None);
 
         // Assert
-        Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
-        var okResult = (OkObjectResult)result.Result;
+        Assert.That(result, Is.InstanceOf<OkObjectResult>());
+        var okResult = (OkObjectResult)result;
         var returnedPayments = (IEnumerable<PaymentDto>)okResult.Value;
         Assert.That(returnedPayments.Count(), Is.EqualTo(1));
         Assert.That(returnedPayments.First().FeeId, Is.EqualTo(feeId));
@@ -730,15 +730,15 @@ public class FeeControllerTests
     {
         // Arrange
         var feeId = Guid.NewGuid();
-        _mockFeeService.Setup(x => x.GetPaymentsByFeeIdAsync(feeId, It.IsAny<CancellationToken>()))
+        _mockFeeService.Setup(x => x.GetPaymentsByFeeIdAsync(feeId))
             .ThrowsAsync(new Exception("Service error"));
 
         // Act
         var result = await _controller.GetPaymentsByFeeId(feeId, CancellationToken.None);
 
         // Assert
-        Assert.That(result.Result, Is.InstanceOf<ObjectResult>());
-        var statusResult = (ObjectResult)result.Result;
+        Assert.That(result, Is.InstanceOf<ObjectResult>());
+        var statusResult = (ObjectResult)result;
         Assert.That(statusResult.StatusCode, Is.EqualTo(500));
     }
 
@@ -759,15 +759,14 @@ public class FeeControllerTests
             TotalOutstanding = 1000m,
             TotalOverdue = 500m
         };
-        _mockFeeService.Setup(x => x.GetStudentFeesSummaryAsync(studentId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(summary);
+        _mockFeeService.Setup(x => x.GetStudentFeesSummaryAsync(It.IsAny<CancellationToken>())).ReturnsAsync(summary);
 
         // Act
         var result = await _controller.GetStudentFeesSummary(studentId, CancellationToken.None);
 
         // Assert
-        Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
-        var okResult = (OkObjectResult)result.Result;
+        Assert.That(result, Is.InstanceOf<OkObjectResult>());
+        var okResult = (OkObjectResult)result;
         var returnedSummary = (FeesSummaryDto)okResult.Value;
         Assert.That(returnedSummary.StudentId, Is.EqualTo(studentId));
         Assert.That(returnedSummary.TotalFees, Is.EqualTo(2000m));
@@ -778,15 +777,15 @@ public class FeeControllerTests
     {
         // Arrange
         var studentId = Guid.NewGuid();
-        _mockFeeService.Setup(x => x.GetStudentFeesSummaryAsync(studentId, It.IsAny<CancellationToken>()))
+        _mockFeeService.Setup(x => x.GetStudentFeesSummaryAsync(studentId))
             .ThrowsAsync(new Exception("Service error"));
 
         // Act
         var result = await _controller.GetStudentFeesSummary(studentId, CancellationToken.None);
 
         // Assert
-        Assert.That(result.Result, Is.InstanceOf<ObjectResult>());
-        var statusResult = (ObjectResult)result.Result;
+        Assert.That(result, Is.InstanceOf<ObjectResult>());
+        var statusResult = (ObjectResult)result;
         Assert.That(statusResult.StatusCode, Is.EqualTo(500));
     }
 
@@ -803,15 +802,14 @@ public class FeeControllerTests
         {
             new() { PaymentId = Guid.NewGuid(), FeeId = Guid.NewGuid(), Amount = 500m, PaymentMethod = "Credit Card" }
         };
-        _mockFeeService.Setup(x => x.GetPaymentsByStudentIdAsync(studentId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(payments);
+        _mockFeeService.Setup(x => x.GetPaymentsByStudentIdAsync(It.IsAny<CancellationToken>())).ReturnsAsync(payments);
 
         // Act
         var result = await _controller.GetPaymentsByStudentId(studentId, CancellationToken.None);
 
         // Assert
-        Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
-        var okResult = (OkObjectResult)result.Result;
+        Assert.That(result, Is.InstanceOf<OkObjectResult>());
+        var okResult = (OkObjectResult)result;
         var returnedPayments = (IEnumerable<PaymentDto>)okResult.Value;
         Assert.That(returnedPayments.Count(), Is.EqualTo(1));
     }
@@ -821,15 +819,15 @@ public class FeeControllerTests
     {
         // Arrange
         var studentId = Guid.NewGuid();
-        _mockFeeService.Setup(x => x.GetPaymentsByStudentIdAsync(studentId, It.IsAny<CancellationToken>()))
+        _mockFeeService.Setup(x => x.GetPaymentsByStudentIdAsync(studentId))
             .ThrowsAsync(new Exception("Service error"));
 
         // Act
         var result = await _controller.GetPaymentsByStudentId(studentId, CancellationToken.None);
 
         // Assert
-        Assert.That(result.Result, Is.InstanceOf<ObjectResult>());
-        var statusResult = (ObjectResult)result.Result;
+        Assert.That(result, Is.InstanceOf<ObjectResult>());
+        var statusResult = (ObjectResult)result;
         Assert.That(statusResult.StatusCode, Is.EqualTo(500));
     }
 
@@ -842,8 +840,7 @@ public class FeeControllerTests
     {
         // Arrange
         var feeId = Guid.NewGuid();
-        _mockFeeService.Setup(x => x.MarkFeeAsPaidAsync(feeId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
+        _mockFeeService.Setup(x => x.MarkFeeAsPaidAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
         // Act
         var result = await _controller.MarkFeeAsPaid(feeId, CancellationToken.None);
@@ -857,8 +854,7 @@ public class FeeControllerTests
     {
         // Arrange
         var feeId = Guid.NewGuid();
-        _mockFeeService.Setup(x => x.MarkFeeAsPaidAsync(feeId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(false);
+        _mockFeeService.Setup(x => x.MarkFeeAsPaidAsync(It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
         // Act
         var result = await _controller.MarkFeeAsPaid(feeId, CancellationToken.None);
@@ -872,7 +868,7 @@ public class FeeControllerTests
     {
         // Arrange
         var feeId = Guid.NewGuid();
-        _mockFeeService.Setup(x => x.MarkFeeAsPaidAsync(feeId, It.IsAny<CancellationToken>()))
+        _mockFeeService.Setup(x => x.MarkFeeAsPaidAsync(feeId))
             .ThrowsAsync(new InvalidOperationException("Fee already paid"));
 
         // Act
@@ -887,7 +883,7 @@ public class FeeControllerTests
     {
         // Arrange
         var feeId = Guid.NewGuid();
-        _mockFeeService.Setup(x => x.MarkFeeAsPaidAsync(feeId, It.IsAny<CancellationToken>()))
+        _mockFeeService.Setup(x => x.MarkFeeAsPaidAsync(feeId))
             .ThrowsAsync(new Exception("Service error"));
 
         // Act
@@ -895,7 +891,7 @@ public class FeeControllerTests
 
         // Assert
         Assert.That(result, Is.InstanceOf<ObjectResult>());
-        var statusResult = (ObjectResult)result;
+        var statusResult = result as ObjectResult;
         Assert.That(statusResult.StatusCode, Is.EqualTo(500));
     }
 
@@ -929,7 +925,7 @@ public class FeeControllerTests
 
         // Assert
         Assert.That(result, Is.InstanceOf<ObjectResult>());
-        var statusResult = (ObjectResult)result;
+        var statusResult = result as ObjectResult;
         Assert.That(statusResult.StatusCode, Is.EqualTo(500));
     }
 
@@ -951,15 +947,15 @@ public class FeeControllerTests
             Description = "Test fee"
         };
         var exception = new Exception("Test exception");
-        _mockFeeService.Setup(x => x.CreateFeeAsync(request, It.IsAny<CancellationToken>()))
+        _mockFeeService.Setup(x => x.CreateFeeAsync(request))
             .ThrowsAsync(exception);
 
         // Act
         var result = await _controller.CreateFee(request, CancellationToken.None);
 
         // Assert
-        Assert.That(result.Result, Is.InstanceOf<ObjectResult>());
-        var statusResult = (ObjectResult)result.Result;
+        Assert.That(result, Is.InstanceOf<ObjectResult>());
+        var statusResult = (ObjectResult)result;
         Assert.That(statusResult.StatusCode, Is.EqualTo(500));
         
         // In development, should include detailed error information
@@ -980,15 +976,15 @@ public class FeeControllerTests
             DueDate = DateTime.UtcNow.AddDays(30),
             Description = "Test fee"
         };
-        _mockFeeService.Setup(x => x.CreateFeeAsync(request, It.IsAny<CancellationToken>()))
+        _mockFeeService.Setup(x => x.CreateFeeAsync(request))
             .ThrowsAsync(new Exception("Service error"));
 
         // Act
         var result = await _controller.CreateFee(request, CancellationToken.None);
 
         // Assert
-        Assert.That(result.Result, Is.InstanceOf<ObjectResult>());
-        var statusResult = (ObjectResult)result.Result;
+        Assert.That(result, Is.InstanceOf<ObjectResult>());
+        var statusResult = (ObjectResult)result;
         Assert.That(statusResult.StatusCode, Is.EqualTo(500));
         
         // In production, should only show generic error message
@@ -1013,8 +1009,7 @@ public class FeeControllerTests
             Description = "Test fee"
         };
         var feeId = Guid.NewGuid();
-        _mockFeeService.Setup(x => x.CreateFeeAsync(request, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(feeId);
+        _mockFeeService.Setup(x => x.CreateFeeAsync(It.IsAny<CancellationToken>())).ReturnsAsync(feeId);
 
         // Act
         await _controller.CreateFee(request, CancellationToken.None);
@@ -1042,7 +1037,7 @@ public class FeeControllerTests
             DueDate = DateTime.UtcNow.AddDays(30),
             Description = "Test fee"
         };
-        _mockFeeService.Setup(x => x.CreateFeeAsync(request, It.IsAny<CancellationToken>()))
+        _mockFeeService.Setup(x => x.CreateFeeAsync(request))
             .ThrowsAsync(new ArgumentException("Student not found"));
 
         // Act
@@ -1072,7 +1067,7 @@ public class FeeControllerTests
             Description = "Test fee"
         };
         var exception = new Exception("Service error");
-        _mockFeeService.Setup(x => x.CreateFeeAsync(request, It.IsAny<CancellationToken>()))
+        _mockFeeService.Setup(x => x.CreateFeeAsync(request))
             .ThrowsAsync(exception);
 
         // Act
@@ -1090,4 +1085,5 @@ public class FeeControllerTests
     }
 
     #endregion
+
 }

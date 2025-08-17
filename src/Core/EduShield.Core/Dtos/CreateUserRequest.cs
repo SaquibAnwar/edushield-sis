@@ -26,4 +26,7 @@ public class CreateUserRequest
     public UserRole Role { get; set; } = UserRole.Student;
     
     public string? ProfilePictureUrl { get; set; }
+    
+    // Legacy property for backward compatibility
+    public string Name => $"{FirstName} {LastName}".Trim();
 }

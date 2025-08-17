@@ -1,6 +1,7 @@
 using EduShield.Core.Dtos;
 using EduShield.Api.Infra;
 using EduShield.Core.Interfaces;
+using EduShield.Core.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,21 +9,28 @@ namespace EduShield.Api.Controllers;
 
 [ApiController]
 [Route("api/v1/student")]
+[Authorize]
 public class StudentController : ControllerBase
 {
     private readonly IStudentService _studentService;
+    private readonly IAuthorizationService _authorizationService;
     private readonly ILogger<StudentController> _logger;
     private readonly IWebHostEnvironment _environment;
 
-    public StudentController(IStudentService studentService, ILogger<StudentController> logger, IWebHostEnvironment environment)
+    public StudentController(
+        IStudentService studentService, 
+        IAuthorizationService authorizationService,
+        ILogger<StudentController> logger, 
+        IWebHostEnvironment environment)
     {
         _studentService = studentService;
+        _authorizationService = authorizationService;
         _logger = logger;
         _environment = environment;
     }
 
     [HttpPost]
-    [Authorize]
+    [Authorize(Policy = "TeacherOrAdmin")]
     public async Task<IActionResult> CreateStudent([FromBody] CreateStudentReq request, CancellationToken cancellationToken)
     {
         try
@@ -53,7 +61,6 @@ public class StudentController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
-    [AllowAnonymous]
     public async Task<IActionResult> GetStudent(Guid id, CancellationToken cancellationToken)
     {
         try
@@ -63,6 +70,14 @@ public class StudentController : ControllerBase
             {
                 return NotFound(new { error = "Student not found" });
             }
+
+            // Check if user has access to this student
+            var authResult = await _authorizationService.AuthorizeAsync(User, student, "StudentAccess");
+            if (!authResult.Succeeded)
+            {
+                return Forbid();
+            }
+
             return Ok(student);
         }
         catch (Exception ex)
@@ -73,13 +88,25 @@ public class StudentController : ControllerBase
     }
 
     [HttpGet]
-    [AllowAnonymous]
+    [Authorize(Policy = "TeacherOrAdmin")]
     public async Task<IActionResult> GetAllStudents(CancellationToken cancellationToken)
     {
         try
         {
             var students = await _studentService.GetAllAsync(cancellationToken);
-            return Ok(students);
+            
+            // Filter students based on user's access level
+            var filteredStudents = new List<StudentDto>();
+            foreach (var student in students)
+            {
+                var authResult = await _authorizationService.AuthorizeAsync(User, student, "StudentAccess");
+                if (authResult.Succeeded)
+                {
+                    filteredStudents.Add(student);
+                }
+            }
+
+            return Ok(filteredStudents);
         }
         catch (Exception ex)
         {
@@ -93,11 +120,24 @@ public class StudentController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
-    [Authorize]
+    [Authorize(Policy = "TeacherOrAdmin")]
     public async Task<IActionResult> UpdateStudent(Guid id, [FromBody] CreateStudentReq request, CancellationToken cancellationToken)
     {
         try
         {
+            var student = await _studentService.GetAsync(id, cancellationToken);
+            if (student == null)
+            {
+                return NotFound(new { error = "Student not found" });
+            }
+
+            // Check if user has access to update this student
+            var authResult = await _authorizationService.AuthorizeAsync(User, student, "StudentAccess");
+            if (!authResult.Succeeded)
+            {
+                return Forbid();
+            }
+
             var updated = await _studentService.UpdateAsync(id, request, cancellationToken);
             if (!updated)
             {
@@ -118,11 +158,24 @@ public class StudentController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    [Authorize]
+    [Authorize(Policy = "SchoolAdminOnly")]
     public async Task<IActionResult> DeleteStudent(Guid id, CancellationToken cancellationToken)
     {
         try
         {
+            var student = await _studentService.GetAsync(id, cancellationToken);
+            if (student == null)
+            {
+                return NotFound(new { error = "Student not found" });
+            }
+
+            // Check if user has access to delete this student
+            var authResult = await _authorizationService.AuthorizeAsync(User, student, "StudentAccess");
+            if (!authResult.Succeeded)
+            {
+                return Forbid();
+            }
+
             var deleted = await _studentService.DeleteAsync(id, cancellationToken);
             if (!deleted)
             {

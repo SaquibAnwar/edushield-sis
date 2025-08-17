@@ -51,8 +51,7 @@ public class FacultyServiceTests
         };
 
         _mockMapper.Setup(x => x.Map<Faculty>(request)).Returns(faculty);
-        _mockFacultyRepo.Setup(x => x.CreateAsync(faculty, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(faculty);
+        _mockFacultyRepo.Setup(x => x.CreateAsync(It.IsAny<CancellationToken>())).ReturnsAsync(faculty);
 
         // Act
         var result = await _service.CreateAsync(request, CancellationToken.None);
@@ -84,8 +83,7 @@ public class FacultyServiceTests
             Gender = faculty.Gender
         };
 
-        _mockFacultyRepo.Setup(x => x.GetByIdAsync(facultyId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(faculty);
+        _mockFacultyRepo.Setup(x => x.GetByIdAsync(It.IsAny<CancellationToken>())).ReturnsAsync(faculty);
         _mockMapper.Setup(x => x.Map<FacultyDto>(faculty)).Returns(facultyDto);
 
         // Act
@@ -102,7 +100,7 @@ public class FacultyServiceTests
     {
         // Arrange
         var facultyId = Guid.NewGuid();
-        _mockFacultyRepo.Setup(x => x.GetByIdAsync(facultyId, It.IsAny<CancellationToken>()))
+        _mockFacultyRepo.Setup(x => x.GetByIdAsync(facultyId))
             .ReturnsAsync((Faculty?)null);
 
         // Act
@@ -163,10 +161,8 @@ public class FacultyServiceTests
             Gender = Gender.M
         };
 
-        _mockFacultyRepo.Setup(x => x.GetByIdAsync(facultyId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(existingFaculty);
-        _mockFacultyRepo.Setup(x => x.UpdateAsync(existingFaculty, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(existingFaculty);
+        _mockFacultyRepo.Setup(x => x.GetByIdAsync(It.IsAny<CancellationToken>())).ReturnsAsync(existingFaculty);
+        _mockFacultyRepo.Setup(x => x.UpdateAsync(It.IsAny<CancellationToken>())).ReturnsAsync(existingFaculty);
 
         // Act
         var result = await _service.UpdateAsync(facultyId, request, CancellationToken.None);
@@ -193,7 +189,7 @@ public class FacultyServiceTests
             Gender = Gender.M
         };
 
-        _mockFacultyRepo.Setup(x => x.GetByIdAsync(facultyId, It.IsAny<CancellationToken>()))
+        _mockFacultyRepo.Setup(x => x.GetByIdAsync(facultyId))
             .ReturnsAsync((Faculty?)null);
 
         // Act
@@ -218,9 +214,8 @@ public class FacultyServiceTests
             Gender = Gender.M
         };
 
-        _mockFacultyRepo.Setup(x => x.GetByIdAsync(facultyId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(existingFaculty);
-        _mockFacultyRepo.Setup(x => x.DeleteAsync(facultyId, It.IsAny<CancellationToken>()))
+        _mockFacultyRepo.Setup(x => x.GetByIdAsync(It.IsAny<CancellationToken>())).ReturnsAsync(existingFaculty);
+        _mockFacultyRepo.Setup(x => x.DeleteAsync(facultyId))
             .Returns(Task.CompletedTask);
 
         // Act
@@ -236,7 +231,7 @@ public class FacultyServiceTests
     {
         // Arrange
         var facultyId = Guid.NewGuid();
-        _mockFacultyRepo.Setup(x => x.GetByIdAsync(facultyId, It.IsAny<CancellationToken>()))
+        _mockFacultyRepo.Setup(x => x.GetByIdAsync(facultyId))
             .ReturnsAsync((Faculty?)null);
 
         // Act
@@ -246,4 +241,5 @@ public class FacultyServiceTests
         Assert.That(result, Is.False);
         _mockFacultyRepo.Verify(x => x.DeleteAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
     }
+
 }

@@ -5,6 +5,7 @@ using EduShield.Core.Dtos;
 using EduShield.Core.Interfaces;
 using EduShield.Api.Controllers;
 using EduShield.Core.Enums;
+using Microsoft.AspNetCore.Authorization;
 
 namespace EduShield.Api.Tests;
 
@@ -12,14 +13,16 @@ namespace EduShield.Api.Tests;
 public class FacultyControllerTests
 {
     private readonly Mock<IFacultyService> _mockFacultyService;
+    private readonly Mock<IAuthorizationService> _mockAuthorizationService;
     private readonly Mock<ILogger<FacultyController>> _mockLogger;
     private readonly FacultyController _controller;
 
     public FacultyControllerTests()
     {
         _mockFacultyService = new Mock<IFacultyService>();
+        _mockAuthorizationService = new Mock<IAuthorizationService>();
         _mockLogger = new Mock<ILogger<FacultyController>>();
-        _controller = new FacultyController(_mockFacultyService.Object, _mockLogger.Object);
+        _controller = new FacultyController(_mockFacultyService.Object, _mockAuthorizationService.Object, _mockLogger.Object);
     }
 
     [Test]
@@ -34,8 +37,7 @@ public class FacultyControllerTests
             Gender = Gender.M
         };
         var facultyId = Guid.NewGuid();
-        _mockFacultyService.Setup(x => x.CreateAsync(request, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(facultyId);
+        _mockFacultyService.Setup(x => x.CreateAsync(It.IsAny<CancellationToken>())).ReturnsAsync(facultyId);
 
         // Act
         var result = await _controller.Create(request, CancellationToken.None);
@@ -58,7 +60,7 @@ public class FacultyControllerTests
             Subject = "Programming",
             Gender = Gender.M
         };
-        _mockFacultyService.Setup(x => x.CreateAsync(request, It.IsAny<CancellationToken>()))
+        _mockFacultyService.Setup(x => x.CreateAsync(request))
             .ThrowsAsync(new Exception("Service error"));
 
         // Act
@@ -83,8 +85,10 @@ public class FacultyControllerTests
             Subject = "Programming",
             Gender = Gender.M
         };
-        _mockFacultyService.Setup(x => x.GetAsync(facultyId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(facultyDto);
+        _mockFacultyService.Setup(x => x.GetAsync(It.IsAny<CancellationToken>())).ReturnsAsync(facultyDto);
+        
+        _mockAuthorizationService.Setup(x => x.AuthorizeAsync(It.IsAny<System.Security.Claims.ClaimsPrincipal>(), It.IsAny<object>(), "FacultyAccess"))
+            .ReturnsAsync(AuthorizationResult.Success());
 
         // Act
         var result = await _controller.Get(facultyId, CancellationToken.None);
@@ -101,7 +105,7 @@ public class FacultyControllerTests
     {
         // Arrange
         var facultyId = Guid.NewGuid();
-        _mockFacultyService.Setup(x => x.GetAsync(facultyId, It.IsAny<CancellationToken>()))
+        _mockFacultyService.Setup(x => x.GetAsync(facultyId))
             .ReturnsAsync((FacultyDto?)null);
 
         // Act
@@ -122,6 +126,9 @@ public class FacultyControllerTests
         };
         _mockFacultyService.Setup(x => x.GetAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(faculties);
+        
+        _mockAuthorizationService.Setup(x => x.AuthorizeAsync(It.IsAny<System.Security.Claims.ClaimsPrincipal>(), It.IsAny<object>(), "FacultyAccess"))
+            .ReturnsAsync(AuthorizationResult.Success());
 
         // Act
         var result = await _controller.GetAll(CancellationToken.None);
@@ -145,8 +152,7 @@ public class FacultyControllerTests
             Subject = "Programming",
             Gender = Gender.M
         };
-        _mockFacultyService.Setup(x => x.UpdateAsync(facultyId, request, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
+        _mockFacultyService.Setup(x => x.UpdateAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
         // Act
         var result = await _controller.Update(facultyId, request, CancellationToken.None);
@@ -167,8 +173,7 @@ public class FacultyControllerTests
             Subject = "Programming",
             Gender = Gender.M
         };
-        _mockFacultyService.Setup(x => x.UpdateAsync(facultyId, request, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(false);
+        _mockFacultyService.Setup(x => x.UpdateAsync(It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
         // Act
         var result = await _controller.Update(facultyId, request, CancellationToken.None);
@@ -182,8 +187,7 @@ public class FacultyControllerTests
     {
         // Arrange
         var facultyId = Guid.NewGuid();
-        _mockFacultyService.Setup(x => x.DeleteAsync(facultyId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
+        _mockFacultyService.Setup(x => x.DeleteAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
         // Act
         var result = await _controller.Delete(facultyId, CancellationToken.None);
@@ -197,8 +201,7 @@ public class FacultyControllerTests
     {
         // Arrange
         var facultyId = Guid.NewGuid();
-        _mockFacultyService.Setup(x => x.DeleteAsync(facultyId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(false);
+        _mockFacultyService.Setup(x => x.DeleteAsync(It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
         // Act
         var result = await _controller.Delete(facultyId, CancellationToken.None);
@@ -206,4 +209,5 @@ public class FacultyControllerTests
         // Assert
         Assert.That(result, Is.InstanceOf<NotFoundResult>());
     }
+
 }

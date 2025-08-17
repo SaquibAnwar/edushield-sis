@@ -6,6 +6,9 @@ public class Fee : AuditableEntity
 {
     public Guid FeeId { get; set; }
     public Guid StudentId { get; set; }
+    
+    // Backward compatibility property for tests
+    public Guid Id => FeeId;
     public FeeType FeeType { get; set; }
     public decimal Amount { get; set; }
     public decimal PaidAmount { get; set; }

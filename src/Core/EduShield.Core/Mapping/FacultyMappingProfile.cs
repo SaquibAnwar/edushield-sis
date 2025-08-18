@@ -15,3 +15,4 @@ public class FacultyMappingProfile : Profile
             .ForMember(dest => dest.Students, opt => opt.Ignore());
     }
 }
+

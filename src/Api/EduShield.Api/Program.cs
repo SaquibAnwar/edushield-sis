@@ -390,7 +390,7 @@ if (!app.Environment.IsEnvironment("Testing"))
     else
     {
         // For PostgreSQL, apply migrations
-        // context.Database.Migrate();
+        context.Database.Migrate();
     }
 }
 

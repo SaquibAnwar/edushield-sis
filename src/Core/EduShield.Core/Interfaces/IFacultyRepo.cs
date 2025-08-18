@@ -10,3 +10,4 @@ public interface IFacultyRepo
     Task<Faculty> UpdateAsync(Faculty faculty, CancellationToken cancellationToken);
     Task DeleteAsync(Guid id, CancellationToken cancellationToken);
 }
+

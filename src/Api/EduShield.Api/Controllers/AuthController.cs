@@ -73,27 +73,57 @@ public class AuthController : ControllerBase
 
         try
         {
-            // For testing purposes, we'll create a mock ID token
+            // For testing purposes, we'll bypass JWT parsing and directly create user
             // In production, you'd exchange the code for tokens with Google
-            var mockIdToken = CreateMockIdToken();
-            
             var ipAddress = SecurityHelper.SanitizeIpAddress(HttpContext.Connection.RemoteIpAddress?.ToString());
             var userAgent = SecurityHelper.SanitizeUserAgent(Request.Headers.UserAgent);
 
-            var result = await _callbackHandler.HandleGoogleCallbackAsync(mockIdToken, ipAddress, userAgent);
-            
-            if (!result.Success)
+            // Create mock user info directly (bypassing JWT parsing)
+            var mockUserInfo = new ExternalUserInfo
             {
-                return BadRequest(new { error = result.ErrorMessage });
+                ExternalId = "google-user-iamsaquibanwar",
+                Email = "iamsaquibanwar@gmail.com",
+                FirstName = "Saqib",
+                LastName = "Anwar",
+                ProfilePictureUrl = "https://lh3.googleusercontent.com/a/default-user",
+                Provider = Core.Enums.AuthProvider.Google,
+                Claims = new Dictionary<string, string>
+                {
+                    ["sub"] = "google-user-iamsaquibanwar",
+                    ["email"] = "iamsaquibanwar@gmail.com",
+                    ["given_name"] = "Saqib",
+                    ["family_name"] = "Anwar"
+                }
+            };
+
+            // Get or create user
+            var user = await _authService.GetOrCreateUserAsync(mockUserInfo);
+            
+            // Validate user is active
+            if (!await _authService.ValidateUserAsync(user.UserId))
+            {
+                return BadRequest(new { error = "Account is deactivated" });
             }
+
+            // Create session
+            var session = await _authService.CreateSessionAsync(user.UserId, ipAddress, userAgent);
 
             // Set authentication cookie
             var cookieOptions = _callbackHandler.CreateAuthCookie();
-            Response.Cookies.Append(_authConfig.CookieName, result.SessionToken!, cookieOptions);
+            Response.Cookies.Append(_authConfig.CookieName, session.SessionToken, cookieOptions);
 
-            // Redirect to return URL or default
-            var returnUrl = !string.IsNullOrEmpty(state) ? state : "/";
-            return Redirect(returnUrl);
+            // Return success message instead of redirect for testing
+            return Ok(new { 
+                message = "Authentication successful!", 
+                user = new {
+                    userId = user.UserId,
+                    email = user.Email,
+                    name = user.FullName,
+                    role = user.Role
+                },
+                sessionToken = session.SessionToken,
+                redirectUrl = !string.IsNullOrEmpty(state) ? state : "/"
+            });
         }
         catch (Exception ex)
         {
@@ -449,14 +479,14 @@ public class AuthController : ControllerBase
     private string CreateMockIdToken()
     {
         // This is a mock implementation for testing
-        // In production, you'd get the real ID token from Google
+        // In production, you'd exchange the code for tokens with Google
         var mockClaims = new Dictionary<string, object>
         {
-            ["sub"] = "google-user-123",
-            ["email"] = "test@gmail.com",
-            ["given_name"] = "Test",
-            ["family_name"] = "User",
-            ["picture"] = "https://example.com/avatar.jpg",
+            ["sub"] = "google-user-iamsaquibanwar",
+            ["email"] = "iamsaquibanwar@gmail.com",
+            ["given_name"] = "Saqib",
+            ["family_name"] = "Anwar",
+            ["picture"] = "https://lh3.googleusercontent.com/a/default-user",
             ["iat"] = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
             ["exp"] = DateTimeOffset.UtcNow.AddHours(1).ToUnixTimeSeconds()
         };

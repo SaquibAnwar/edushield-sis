@@ -10,3 +10,4 @@ public interface IFacultyService
     Task<bool> UpdateAsync(Guid id, CreateFacultyReq request, CancellationToken cancellationToken);
     Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken);
 }
+

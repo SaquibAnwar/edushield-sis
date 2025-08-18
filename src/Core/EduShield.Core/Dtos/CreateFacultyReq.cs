@@ -9,3 +9,4 @@ public class CreateFacultyReq
     public string Subject { get; set; } = string.Empty;
     public Gender Gender { get; set; }
 }
+

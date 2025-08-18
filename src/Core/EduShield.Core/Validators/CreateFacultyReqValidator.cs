@@ -23,3 +23,4 @@ public class CreateFacultyReqValidator : AbstractValidator<CreateFacultyReq>
             .IsInEnum().WithMessage("Gender must be a valid value");
     }
 }
+

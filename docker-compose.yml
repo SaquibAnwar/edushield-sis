@@ -5,9 +5,9 @@ services:
     image: postgres:15-alpine
     container_name: edushield-postgres
     environment:
+      POSTGRES_DB: edushield_sis
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: secret
-      POSTGRES_DB: edushield
+      POSTGRES_PASSWORD: postgres123
     ports:
       - "5432:5432"
     volumes:
@@ -18,5 +18,20 @@ services:
       timeout: 5s
       retries: 5
 
+  redis:
+    image: redis:7-alpine
+    container_name: edushield-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 volumes:
   postgres_data:
+  redis_data:

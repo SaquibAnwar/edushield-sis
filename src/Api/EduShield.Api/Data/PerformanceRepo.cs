@@ -58,23 +58,23 @@ public class PerformanceRepo : IPerformanceRepo
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<Performance?> UpdateAsync(Performance performance, CancellationToken cancellationToken = default)
+    public async Task<bool> UpdateAsync(Guid id, Performance entity, CancellationToken cancellationToken = default)
     {
         var existingPerformance = await _context.Performances
-            .FirstOrDefaultAsync(p => p.PerformanceId == performance.PerformanceId, cancellationToken);
+            .FirstOrDefaultAsync(p => p.PerformanceId == id, cancellationToken);
 
         if (existingPerformance == null)
-            return null;
+            return false;
 
-        existingPerformance.StudentId = performance.StudentId;
-        existingPerformance.FacultyId = performance.FacultyId;
-        existingPerformance.Subject = performance.Subject;
-        existingPerformance.Marks = performance.Marks;
-        existingPerformance.MaxMarks = performance.MaxMarks;
-        existingPerformance.ExamDate = performance.ExamDate;
+        existingPerformance.StudentId = entity.StudentId;
+        existingPerformance.FacultyId = entity.FacultyId;
+        existingPerformance.Subject = entity.Subject;
+        existingPerformance.Marks = entity.Marks;
+        existingPerformance.MaxMarks = entity.MaxMarks;
+        existingPerformance.ExamDate = entity.ExamDate;
 
         await _context.SaveChangesAsync(cancellationToken);
-        return existingPerformance;
+        return true;
     }
 
     public async Task<bool> DeleteAsync(Guid performanceId, CancellationToken cancellationToken = default)

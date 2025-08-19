@@ -27,31 +27,48 @@ public class CachedRepository<TEntity, TDto> : ICachedRepository<TEntity, TDto>
         _entityName = typeof(TEntity).Name;
     }
 
-    public async Task<TDto?> GetByIdAsync(Guid id, CancellationToken ct = default)
+    public async Task<TEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var cacheKey = GetCacheKey(id);
         
-        return await _cacheService.GetOrSetAsync(
-            cacheKey,
-            async () => await _repository.GetByIdAsync(id, ct),
-            CacheKeys.TTL.Medium,
-            ct);
+        var cached = await _cacheService.GetAsync<TEntity>(cacheKey, cancellationToken);
+        if (cached != null)
+        {
+            _logger.LogDebug("Cache hit for {EntityName} with ID: {Id}", _entityName, id);
+            return cached;
+        }
+
+        var result = await _repository.GetByIdAsync(id, cancellationToken);
+        if (result != null)
+        {
+            await _cacheService.SetAsync(cacheKey, result, CacheKeys.TTL.Medium, cancellationToken);
+            _logger.LogDebug("Cached {EntityName} with ID: {Id}", _entityName, id);
+        }
+        
+        return result;
     }
 
-    public async Task<IEnumerable<TDto>> GetAllAsync(CancellationToken ct = default)
+    public async Task<IEnumerable<TEntity>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         var cacheKey = GetListCacheKey();
         
-        return await _cacheService.GetOrSetAsync(
-            cacheKey,
-            async () => await _repository.GetAllAsync(ct),
-            CacheKeys.TTL.Short,
-            ct);
+        var cached = await _cacheService.GetAsync<IEnumerable<TEntity>>(cacheKey, cancellationToken);
+        if (cached != null)
+        {
+            _logger.LogDebug("Cache hit for {EntityName} list", _entityName);
+            return cached;
+        }
+
+        var result = await _repository.GetAllAsync(cancellationToken);
+        await _cacheService.SetAsync(cacheKey, result, CacheKeys.TTL.Short, cancellationToken);
+        _logger.LogDebug("Cached {EntityName} list", _entityName);
+        
+        return result;
     }
 
-    public async Task<TDto> CreateAsync(TEntity entity, CancellationToken ct = default)
+    public async Task<TEntity> CreateAsync(TEntity entity, CancellationToken cancellationToken = default)
     {
-        var result = await _repository.CreateAsync(entity, ct);
+        var result = await _repository.CreateAsync(entity, cancellationToken);
         
         // Invalidate list cache when new entity is created
         await InvalidateListCache();
@@ -59,9 +76,9 @@ public class CachedRepository<TEntity, TDto> : ICachedRepository<TEntity, TDto>
         return result;
     }
 
-    public async Task<bool> UpdateAsync(Guid id, TEntity entity, CancellationToken ct = default)
+    public async Task<bool> UpdateAsync(Guid id, TEntity entity, CancellationToken cancellationToken = default)
     {
-        var result = await _repository.UpdateAsync(id, entity, ct);
+        var result = await _repository.UpdateAsync(id, entity, cancellationToken);
         
         if (result)
         {
@@ -73,9 +90,9 @@ public class CachedRepository<TEntity, TDto> : ICachedRepository<TEntity, TDto>
         return result;
     }
 
-    public async Task<bool> DeleteAsync(Guid id, CancellationToken ct = default)
+    public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var result = await _repository.DeleteAsync(id, ct);
+        var result = await _repository.DeleteAsync(id, cancellationToken);
         
         if (result)
         {
@@ -87,81 +104,55 @@ public class CachedRepository<TEntity, TDto> : ICachedRepository<TEntity, TDto>
         return result;
     }
 
-    public async Task<TDto?> GetByEmailAsync(string email, CancellationToken ct = default)
+    // Additional cached methods for common queries - these will need to be implemented
+    // based on the specific repository capabilities
+    public async Task<TDto?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
     {
-        var cacheKey = GetEmailCacheKey(email);
-        
-        return await _cacheService.GetOrSetAsync(
-            cacheKey,
-            async () => await _repository.GetByEmailAsync(email, ct),
-            CacheKeys.TTL.Medium,
-            ct);
+        // This method needs to be implemented by specific cached repositories
+        // as not all entities have email fields
+        throw new NotImplementedException($"GetByEmailAsync is not implemented for {_entityName}");
     }
 
-    public async Task<IEnumerable<TDto>> GetByRoleAsync(int role, CancellationToken ct = default)
+    public async Task<IEnumerable<TDto>> GetByRoleAsync(int role, CancellationToken cancellationToken = default)
     {
-        var cacheKey = GetRoleCacheKey(role);
-        
-        return await _cacheService.GetOrSetAsync(
-            cacheKey,
-            async () => await _repository.GetByRoleAsync(role, ct),
-            CacheKeys.TTL.Short,
-            ct);
+        // This method needs to be implemented by specific cached repositories
+        // as not all entities have role fields
+        throw new NotImplementedException($"GetByRoleAsync is not implemented for {_entityName}");
     }
 
-    public async Task<IEnumerable<TDto>> GetByDepartmentAsync(string department, CancellationToken ct = default)
+    public async Task<IEnumerable<TDto>> GetByDepartmentAsync(string department, CancellationToken cancellationToken = default)
     {
-        var cacheKey = GetDepartmentCacheKey(department);
-        
-        return await _cacheService.GetOrSetAsync(
-            cacheKey,
-            async () => await _repository.GetByDepartmentAsync(department, ct),
-            CacheKeys.TTL.Short,
-            ct);
+        // This method needs to be implemented by specific cached repositories
+        // as not all entities have department fields
+        throw new NotImplementedException($"GetByDepartmentAsync is not implemented for {_entityName}");
     }
 
-    public async Task<IEnumerable<TDto>> GetByStudentAsync(Guid studentId, CancellationToken ct = default)
+    public async Task<IEnumerable<TDto>> GetByStudentAsync(Guid studentId, CancellationToken cancellationToken = default)
     {
-        var cacheKey = GetStudentCacheKey(studentId);
-        
-        return await _cacheService.GetOrSetAsync(
-            cacheKey,
-            async () => await _repository.GetByStudentAsync(studentId, ct),
-            CacheKeys.TTL.Short,
-            ct);
+        // This method needs to be implemented by specific cached repositories
+        // as not all entities have student relationships
+        throw new NotImplementedException($"GetByStudentAsync is not implemented for {_entityName}");
     }
 
-    public async Task<IEnumerable<TDto>> GetByFacultyAsync(Guid facultyId, CancellationToken ct = default)
+    public async Task<IEnumerable<TDto>> GetByFacultyAsync(Guid facultyId, CancellationToken cancellationToken = default)
     {
-        var cacheKey = GetFacultyCacheKey(facultyId);
-        
-        return await _cacheService.GetOrSetAsync(
-            cacheKey,
-            async () => await _repository.GetByFacultyAsync(facultyId, ct),
-            CacheKeys.TTL.Short,
-            ct);
+        // This method needs to be implemented by specific cached repositories
+        // as not all entities have faculty relationships
+        throw new NotImplementedException($"GetByFacultyAsync is not implemented for {_entityName}");
     }
 
-    public async Task<IEnumerable<TDto>> GetByTypeAsync(int type, CancellationToken ct = default)
+    public async Task<IEnumerable<TDto>> GetByTypeAsync(int type, CancellationToken cancellationToken = default)
     {
-        var cacheKey = GetTypeCacheKey(type);
-        
-        return await _cacheService.GetOrSetAsync(
-            cacheKey,
-            async () => await _repository.GetByTypeAsync(type, ct),
-            CacheKeys.TTL.Short,
-            ct);
+        // This method needs to be implemented by specific cached repositories
+        // as not all entities have type fields
+        throw new NotImplementedException($"GetByTypeAsync is not implemented for {_entityName}");
     }
 
-    public async Task<IEnumerable<TDto>> GetByStatusAsync(int status, CancellationToken ct = default)
+    public async Task<IEnumerable<TDto>> GetByStatusAsync(int status, CancellationToken cancellationToken = default)
     {
-        var cacheKey = GetStatusCacheKey(status);
-        
-        return await _cacheService.GetOrSetAsync(
-            cacheKey,
-            async () => await _repository.GetByStatusAsync(status, ct),
-            CacheKeys.TTL.Short,
-            ct);
+        // This method needs to be implemented by specific cached repositories
+        // as not all entities have status fields
+        throw new NotImplementedException($"GetByStatusAsync is not implemented for {_entityName}");
     }
 
     // Cache key generation methods
@@ -238,18 +229,12 @@ public interface ICachedRepository<TEntity, TDto> : IBaseRepository<TEntity>
     where TEntity : class
     where TDto : class
 {
-    Task<TDto?> GetByIdAsync(Guid id, CancellationToken ct = default);
-    Task<IEnumerable<TDto>> GetAllAsync(CellationToken ct = default);
-    Task<TDto> CreateAsync(TEntity entity, CancellationToken ct = default);
-    Task<bool> UpdateAsync(Guid id, TEntity entity, CancellationToken ct = default);
-    Task<bool> DeleteAsync(Guid id, CancellationToken ct = default);
-    
     // Additional cached methods for common queries
-    Task<TDto?> GetByEmailAsync(string email, CancellationToken ct = default);
-    Task<IEnumerable<TDto>> GetByRoleAsync(int role, CancellationToken ct = default);
-    Task<IEnumerable<TDto>> GetByDepartmentAsync(string department, CancellationToken ct = default);
-    Task<IEnumerable<TDto>> GetByStudentAsync(Guid studentId, CancellationToken ct = default);
-    Task<IEnumerable<TDto>> GetByFacultyAsync(Guid facultyId, CancellationToken ct = default);
-    Task<IEnumerable<TDto>> GetByTypeAsync(int type, CancellationToken ct = default);
-    Task<IEnumerable<TDto>> GetByStatusAsync(int status, CancellationToken ct = default);
+    Task<TDto?> GetByEmailAsync(string email, CancellationToken cancellationToken = default);
+    Task<IEnumerable<TDto>> GetByRoleAsync(int role, CancellationToken cancellationToken = default);
+    Task<IEnumerable<TDto>> GetByDepartmentAsync(string department, CancellationToken cancellationToken = default);
+    Task<IEnumerable<TDto>> GetByStudentAsync(Guid studentId, CancellationToken cancellationToken = default);
+    Task<IEnumerable<TDto>> GetByFacultyAsync(Guid facultyId, CancellationToken cancellationToken = default);
+    Task<IEnumerable<TDto>> GetByTypeAsync(int type, CancellationToken cancellationToken = default);
+    Task<IEnumerable<TDto>> GetByStatusAsync(int status, CancellationToken cancellationToken = default);
 }

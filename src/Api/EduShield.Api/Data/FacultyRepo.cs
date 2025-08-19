@@ -37,20 +37,31 @@ public class FacultyRepo : IFacultyRepo
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<Faculty> UpdateAsync(Faculty faculty, CancellationToken cancellationToken)
+    public async Task<bool> UpdateAsync(Guid id, Faculty entity, CancellationToken cancellationToken)
     {
-        _context.Faculty.Update(faculty);
+        var existingFaculty = await _context.Faculty.FindAsync(id, cancellationToken);
+        if (existingFaculty == null)
+            return false;
+
+        // Update properties - only update properties that actually exist
+        existingFaculty.Name = entity.Name;
+        existingFaculty.Department = entity.Department;
+        existingFaculty.Subject = entity.Subject;
+        existingFaculty.Gender = entity.Gender;
+
+        _context.Faculty.Update(existingFaculty);
         await _context.SaveChangesAsync(cancellationToken);
-        return faculty;
+        return true;
     }
 
-    public async Task DeleteAsync(Guid id, CancellationToken cancellationToken)
+    public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken)
     {
         var faculty = await _context.Faculty.FindAsync(id, cancellationToken);
-        if (faculty != null)
-        {
-            _context.Faculty.Remove(faculty);
-            await _context.SaveChangesAsync(cancellationToken);
-        }
+        if (faculty == null)
+            return false;
+
+        _context.Faculty.Remove(faculty);
+        await _context.SaveChangesAsync(cancellationToken);
+        return true;
     }
 }

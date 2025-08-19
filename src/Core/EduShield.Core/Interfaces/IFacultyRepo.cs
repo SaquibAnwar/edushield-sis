@@ -2,12 +2,8 @@ using EduShield.Core.Entities;
 
 namespace EduShield.Core.Interfaces;
 
-public interface IFacultyRepo
+public interface IFacultyRepo : IBaseRepository<Faculty>
 {
-    Task<Faculty> CreateAsync(Faculty faculty, CancellationToken cancellationToken);
-    Task<Faculty?> GetByIdAsync(Guid id, CancellationToken cancellationToken);
-    Task<IEnumerable<Faculty>> GetAllAsync(CancellationToken cancellationToken);
-    Task<Faculty> UpdateAsync(Faculty faculty, CancellationToken cancellationToken);
-    Task DeleteAsync(Guid id, CancellationToken cancellationToken);
+    // Additional faculty-specific methods can be added here if needed
 }
 

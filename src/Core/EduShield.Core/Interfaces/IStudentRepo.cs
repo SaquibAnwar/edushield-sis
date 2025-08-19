@@ -2,11 +2,7 @@ using EduShield.Core.Entities;
 
 namespace EduShield.Core.Interfaces;
 
-public interface IStudentRepo
+public interface IStudentRepo : IBaseRepository<Student>
 {
-    Task<Student> CreateAsync(Student student, CancellationToken cancellationToken);
-    Task<Student?> GetByIdAsync(Guid id, CancellationToken cancellationToken);
-    Task<IEnumerable<Student>> GetAllAsync(CancellationToken cancellationToken);
-    Task<Student> UpdateAsync(Student student, CancellationToken cancellationToken);
-    Task DeleteAsync(Guid id, CancellationToken cancellationToken);
+    // Additional student-specific methods can be added here if needed
 }

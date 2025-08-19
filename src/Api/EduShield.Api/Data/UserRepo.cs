@@ -22,6 +22,13 @@ public class UserRepo : IUserRepo
             .FirstOrDefaultAsync(u => u.UserId == userId, cancellationToken);
     }
 
+    public async Task<IEnumerable<User>> GetAllAsync(CancellationToken cancellationToken = default)
+    {
+        return await _context.Users
+            .Include(u => u.Sessions)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
     {
         return await _context.Users
@@ -43,11 +50,27 @@ public class UserRepo : IUserRepo
         return user;
     }
 
-    public async Task<User> UpdateAsync(User user, CancellationToken cancellationToken = default)
+    public async Task<bool> UpdateAsync(Guid id, User entity, CancellationToken cancellationToken)
     {
-        _context.Users.Update(user);
+        var existingUser = await _context.Users.FindAsync(id, cancellationToken);
+        if (existingUser == null)
+            return false;
+
+        // Update properties - only update properties that actually exist
+        existingUser.Email = entity.Email;
+        existingUser.FirstName = entity.FirstName;
+        existingUser.LastName = entity.LastName;
+        existingUser.PhoneNumber = entity.PhoneNumber;
+        existingUser.ExternalId = entity.ExternalId;
+        existingUser.Provider = entity.Provider;
+        existingUser.Role = entity.Role;
+        existingUser.IsActive = entity.IsActive;
+        existingUser.LastLoginAt = entity.LastLoginAt;
+        existingUser.ProfilePictureUrl = entity.ProfilePictureUrl;
+
+        _context.Users.Update(existingUser);
         await _context.SaveChangesAsync(cancellationToken);
-        return user;
+        return true;
     }
 
     public async Task<bool> DeleteAsync(Guid userId, CancellationToken cancellationToken = default)

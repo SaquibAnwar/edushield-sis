@@ -39,20 +39,36 @@ public class StudentRepo : IStudentRepo
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<Student> UpdateAsync(Student student, CancellationToken cancellationToken)
+    public async Task<bool> UpdateAsync(Guid id, Student entity, CancellationToken cancellationToken)
     {
-        _context.Students.Update(student);
+        var existingStudent = await _context.Students.FindAsync(id, cancellationToken);
+        if (existingStudent == null)
+            return false;
+
+        // Update properties - only update properties that actually exist
+        existingStudent.FirstName = entity.FirstName;
+        existingStudent.LastName = entity.LastName;
+        existingStudent.Email = entity.Email;
+        existingStudent.PhoneNumber = entity.PhoneNumber;
+        existingStudent.DateOfBirth = entity.DateOfBirth;
+        existingStudent.Address = entity.Address;
+        existingStudent.EnrollmentDate = entity.EnrollmentDate;
+        existingStudent.Gender = entity.Gender;
+        existingStudent.FacultyId = entity.FacultyId;
+
+        _context.Students.Update(existingStudent);
         await _context.SaveChangesAsync(cancellationToken);
-        return student;
+        return true;
     }
 
-    public async Task DeleteAsync(Guid id, CancellationToken cancellationToken)
+    public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken)
     {
-        var student = await _context.Students.FindAsync(new object[] { id }, cancellationToken);
-        if (student != null)
-        {
-            _context.Students.Remove(student);
-            await _context.SaveChangesAsync(cancellationToken);
-        }
+        var student = await _context.Students.FindAsync(id, cancellationToken);
+        if (student == null)
+            return false;
+
+        _context.Students.Remove(student);
+        await _context.SaveChangesAsync(cancellationToken);
+        return true;
     }
 }

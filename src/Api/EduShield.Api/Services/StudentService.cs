@@ -60,8 +60,7 @@ public class StudentService : IStudentService
         existingStudent.EnrollmentDate = DateTime.SpecifyKind(request.EnrollmentDate, DateTimeKind.Utc);
         existingStudent.UpdatedAt = DateTime.UtcNow;
 
-        await _studentRepo.UpdateAsync(existingStudent, cancellationToken);
-        return true;
+        return await _studentRepo.UpdateAsync(id, existingStudent, cancellationToken);
     }
 
     public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken)

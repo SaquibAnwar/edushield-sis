@@ -3,15 +3,8 @@ using EduShield.Core.Enums;
 
 namespace EduShield.Core.Interfaces;
 
-public interface IFeeRepo
+public interface IFeeRepo : IBaseRepository<Fee>
 {
-    // Basic CRUD operations
-    Task<Fee> CreateAsync(Fee fee, CancellationToken cancellationToken = default);
-    Task<Fee?> GetByIdAsync(Guid feeId, CancellationToken cancellationToken = default);
-    Task<IEnumerable<Fee>> GetAllAsync(CancellationToken cancellationToken = default);
-    Task<Fee> UpdateAsync(Fee fee, CancellationToken cancellationToken = default);
-    Task<bool> DeleteAsync(Guid feeId, CancellationToken cancellationToken = default);
-    
     // Query methods
     Task<IEnumerable<Fee>> GetByStudentIdAsync(Guid studentId, CancellationToken cancellationToken = default);
     Task<IEnumerable<Fee>> GetByFeeTypeAsync(FeeType feeType, CancellationToken cancellationToken = default);

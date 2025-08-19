@@ -112,18 +112,18 @@ public class AuthController : ControllerBase
             var cookieOptions = _callbackHandler.CreateAuthCookie();
             Response.Cookies.Append(_authConfig.CookieName, session.SessionToken, cookieOptions);
 
-            // Return success message instead of redirect for testing
-            return Ok(new { 
-                message = "Authentication successful!", 
-                user = new {
-                    userId = user.UserId,
-                    email = user.Email,
-                    name = user.FullName,
-                    role = user.Role
-                },
-                sessionToken = session.SessionToken,
-                redirectUrl = !string.IsNullOrEmpty(state) ? state : "/"
-            });
+            // Redirect to frontend with authentication data
+            var frontendUrl = "http://localhost:8000/auth-success";
+            var userData = Uri.EscapeDataString(System.Text.Json.JsonSerializer.Serialize(new {
+                userId = user.UserId,
+                email = user.Email,
+                name = user.FullName,
+                role = user.Role
+            }));
+            
+            var redirectUrl = $"{frontendUrl}?token={Uri.EscapeDataString(session.SessionToken)}&user={userData}&message={Uri.EscapeDataString("Authentication successful!")}";
+            
+            return Redirect(redirectUrl);
         }
         catch (Exception ex)
         {
@@ -233,9 +233,18 @@ public class AuthController : ControllerBase
             var cookieOptions = _callbackHandler.CreateAuthCookie();
             Response.Cookies.Append(_authConfig.CookieName, result.SessionToken!, cookieOptions);
 
-            // Redirect to return URL or default
-            var returnUrl = !string.IsNullOrEmpty(state) ? state : "/";
-            return Redirect(returnUrl);
+            // Redirect to frontend with authentication data
+            var frontendUrl = "http://localhost:8000/auth-success";
+            var userData = Uri.EscapeDataString(System.Text.Json.JsonSerializer.Serialize(new {
+                userId = result.User!.UserId,
+                email = result.User.Email,
+                name = result.User.FullName,
+                role = result.User.Role
+            }));
+            
+            var redirectUrl = $"{frontendUrl}?token={Uri.EscapeDataString(result.SessionToken!)}&user={userData}&message={Uri.EscapeDataString("Authentication successful!")}";
+            
+            return Redirect(redirectUrl);
         }
         catch (Exception ex)
         {

@@ -48,8 +48,7 @@ public class FacultyService : IFacultyService
         existingFaculty.Subject = request.Subject;
         existingFaculty.Gender = request.Gender;
 
-        await _facultyRepo.UpdateAsync(existingFaculty, cancellationToken);
-        return true;
+        return await _facultyRepo.UpdateAsync(id, existingFaculty, cancellationToken);
     }
 
     public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken)

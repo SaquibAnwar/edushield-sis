@@ -41,14 +41,28 @@ public class FeeRepo : IFeeRepo
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<Fee> UpdateAsync(Fee fee, CancellationToken cancellationToken = default)
+    public async Task<bool> UpdateAsync(Guid id, Fee entity, CancellationToken cancellationToken = default)
     {
-        if (fee == null)
-            throw new ArgumentNullException(nameof(fee));
+        if (entity == null)
+            throw new ArgumentNullException(nameof(entity));
 
-        _context.Fees.Update(fee);
+        var existingFee = await _context.Fees.FindAsync(id, cancellationToken);
+        if (existingFee == null)
+            return false;
+
+        // Update properties - only update properties that actually exist
+        existingFee.StudentId = entity.StudentId;
+        existingFee.FeeType = entity.FeeType;
+        existingFee.Amount = entity.Amount;
+        existingFee.DueDate = entity.DueDate;
+        existingFee.Description = entity.Description;
+        existingFee.Status = entity.Status;
+        existingFee.IsPaid = entity.IsPaid;
+        existingFee.PaidDate = entity.PaidDate;
+
+        _context.Fees.Update(existingFee);
         await _context.SaveChangesAsync(cancellationToken);
-        return fee;
+        return true;
     }
 
     public async Task<bool> DeleteAsync(Guid feeId, CancellationToken cancellationToken = default)

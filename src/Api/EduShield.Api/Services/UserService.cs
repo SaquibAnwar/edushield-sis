@@ -88,8 +88,11 @@ public class UserService : IUserService
         if (request.ProfilePictureUrl != null)
             user.ProfilePictureUrl = request.ProfilePictureUrl;
 
-        var updatedUser = await _userRepo.UpdateAsync(user, cancellationToken);
-        return await GetUserProfileAsync(updatedUser.UserId, cancellationToken);
+        var success = await _userRepo.UpdateAsync(user.UserId, user, cancellationToken);
+        if (!success)
+            throw new InvalidOperationException("Failed to update user");
+            
+        return await GetUserProfileAsync(user.UserId, cancellationToken);
     }
 
     public async Task<bool> DeactivateUserAsync(Guid userId, CancellationToken cancellationToken = default)
@@ -101,8 +104,7 @@ public class UserService : IUserService
         }
 
         user.IsActive = false;
-        await _userRepo.UpdateAsync(user, cancellationToken);
-        return true;
+        return await _userRepo.UpdateAsync(userId, user, cancellationToken);
     }
 
     public async Task<bool> ActivateUserAsync(Guid userId, CancellationToken cancellationToken = default)
@@ -114,8 +116,7 @@ public class UserService : IUserService
         }
 
         user.IsActive = true;
-        await _userRepo.UpdateAsync(user, cancellationToken);
-        return true;
+        return await _userRepo.UpdateAsync(userId, user, cancellationToken);
     }
 
     public async Task<bool> AssignRoleAsync(Guid userId, UserRole role, CancellationToken cancellationToken = default)
@@ -127,8 +128,7 @@ public class UserService : IUserService
         }
 
         user.Role = role;
-        await _userRepo.UpdateAsync(user, cancellationToken);
-        return true;
+        return await _userRepo.UpdateAsync(userId, user, cancellationToken);
     }
 
     public async Task<bool> UpdateUserRoleAsync(Guid userId, UserRole role, CancellationToken cancellationToken = default)
@@ -194,7 +194,7 @@ public class UserService : IUserService
         if (user != null)
         {
             user.LastLoginAt = DateTime.UtcNow;
-            await _userRepo.UpdateAsync(user, cancellationToken);
+            await _userRepo.UpdateAsync(userId, user, cancellationToken);
         }
     }
 

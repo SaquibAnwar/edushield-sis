@@ -104,15 +104,7 @@ public class PerformanceService : IPerformanceService
             performance.ExamDate
         );
 
-        var updatedPerformance = await _performanceRepo.UpdateAsync(performance, cancellationToken);
-        
-        if (updatedPerformance != null)
-        {
-            _logger.LogInformation("Performance record updated with ID: {PerformanceId}", performanceId);
-            return true;
-        }
-
-        return false;
+        return await _performanceRepo.UpdateAsync(performanceId, performance, cancellationToken);
     }
 
     public async Task<bool> DeleteAsync(Guid performanceId, CancellationToken cancellationToken = default)

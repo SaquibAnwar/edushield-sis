@@ -131,8 +131,7 @@ public class FeeService : IFeeService
         // Recalculate status based on new amount
         UpdateFeeStatus(existingFee);
 
-        await _feeRepo.UpdateAsync(existingFee, cancellationToken);
-        return true;
+        return await _feeRepo.UpdateAsync(feeId, existingFee, cancellationToken);
     }
 
     public async Task<bool> DeleteFeeAsync(Guid feeId, CancellationToken cancellationToken = default)
@@ -220,7 +219,7 @@ public class FeeService : IFeeService
         }
 
         fee.UpdatedAt = DateTime.UtcNow;
-        await _feeRepo.UpdateAsync(fee, cancellationToken);
+        await _feeRepo.UpdateAsync(feeId, fee, cancellationToken);
 
         return _mapper.Map<PaymentDto>(createdPayment);
     }
@@ -298,8 +297,7 @@ public class FeeService : IFeeService
         fee.PaidDate = DateTime.UtcNow;
         fee.UpdatedAt = DateTime.UtcNow;
 
-        await _feeRepo.UpdateAsync(fee, cancellationToken);
-        return true;
+        return await _feeRepo.UpdateAsync(feeId, fee, cancellationToken);
     }
 
     public async Task UpdateFeeStatusesAsync(CancellationToken cancellationToken = default)
@@ -322,7 +320,7 @@ public class FeeService : IFeeService
         // Update fees that had status changes
         foreach (var fee in feesToUpdate)
         {
-            await _feeRepo.UpdateAsync(fee, cancellationToken);
+            await _feeRepo.UpdateAsync(fee.FeeId, fee, cancellationToken);
         }
     }
 
